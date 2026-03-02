@@ -6,29 +6,30 @@ A collection of Claude Code plugins by [workers.io](https://workers.io). Each pl
 
 ## Plugins
 
-### save-spec
+### save
 
 Converts Claude Code conversations into reusable agents. The plugin analyzes your session -- the original task, every correction you made, tool calls, and the final output -- and distills it into an agent file saved to `.claude/agents/`. Agents are invocable with `@agent-name` in any future conversation and shared through version control. No server, no API, no accounts.
 
-**Skill**: `/save-spec:save`
+### kani-proof
 
-#### Install from the marketplace
+Writes Kani bounded model checker proofs for Solana and Rust programs. Includes reference docs covering proof patterns, invariant design, coverage workflows, Kani features, and Anchor verification.
 
-```
-/plugin marketplace add workersio/spec
-/plugin install save-spec@workers-spec
-```
+### solana-audit
 
-#### Install from a local clone
+Structured Solana smart contract security audits across 25 vulnerability types. Includes reference docs for each vulnerability, a cheatsheet, audit checklist, and exploit case studies.
+
+---
+
+## Install
 
 ```bash
-git clone https://github.com/workersio/spec.git
+npx @workersio/spec install <plugin-name>
 ```
 
-Then in Claude Code:
+Or browse and install interactively:
 
-```
-/plugin install /path/to/spec/plugins/save-spec
+```bash
+npx @workersio/spec init
 ```
 
 ---
@@ -37,10 +38,17 @@ Then in Claude Code:
 
 ```
 plugins/
-  save-spec/                     # Convert sessions into reusable agents
+  save/                            # Convert sessions into reusable agents
     .claude-plugin/plugin.json
-    skills/
-      save/SKILL.md              # /save-spec:save
+    skills/save/SKILL.md
+  kani-proof/                      # Kani bounded model checker proofs
+    .claude-plugin/plugin.json
+    skills/kani-proof/SKILL.md
+    skills/kani-proof/references/
+  solana-audit/                    # Solana smart contract audits
+    .claude-plugin/plugin.json
+    skills/solana-audit/SKILL.md
+    skills/solana-audit/references/
 ```
 
 Each plugin lives under `plugins/` with its own `.claude-plugin/plugin.json` manifest and `skills/` directory. The root `.claude-plugin/marketplace.json` catalogs all plugins for marketplace discovery.
