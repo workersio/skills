@@ -1,0 +1,10 @@
+{
+  "name": "solana-audit",
+  "version": "0.1.0",
+  "description": "Structured Solana smart contract security audits",
+  "author": {
+    "name": "workers.io"
+  },
+  "repository": "https://github.com/workersio/spec",
+  "license": "MIT"
+}

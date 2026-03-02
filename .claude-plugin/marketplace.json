@@ -6,9 +6,19 @@
   },
   "plugins": [
     {
-      "name": "spec",
-      "source": "./plugins/spec",
+      "name": "save",
+      "source": "./plugins/save",
       "description": "Convert Claude Code sessions into reusable agents"
+    },
+    {
+      "name": "kani-proof",
+      "source": "./plugins/kani-proof",
+      "description": "Write Kani bounded model checker proofs for Solana and Rust programs"
+    },
+    {
+      "name": "solana-audit",
+      "source": "./plugins/solana-audit",
+      "description": "Structured Solana smart contract security audits"
     }
   ]
 }

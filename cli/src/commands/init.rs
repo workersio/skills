@@ -15,15 +15,21 @@ const BANNER: &str = concat!(
 );
 
 pub fn run() {
-    let marketplace = registry::load();
-
     println!("{}", BANNER);
     intro("@workersio/spec").expect("Failed to show intro");
+
+    let marketplace = match registry::load() {
+        Ok(m) => m,
+        Err(e) => {
+            log::error(format!("{}", e)).expect("Failed to show error");
+            outro("Failed to load marketplace.").expect("Failed to show outro");
+            return;
+        }
+    };
 
     log::info("Browse and install plugins to extend your Claude Code experience.")
         .expect("Failed to show info");
 
-    // Step 2: Select plugins
     let plugins = &marketplace.plugins;
     if plugins.is_empty() {
         outro("No plugins available in the marketplace.").expect("Failed to show outro");
@@ -48,7 +54,6 @@ pub fn run() {
         return;
     }
 
-    // Step 3: Installation scope
     let scope: Scope = match select("Where should we install the plugins?")
         .item(
             Scope::Project,
@@ -65,7 +70,6 @@ pub fn run() {
         }
     };
 
-    // Step 4: Install
     let selected_plugins: Vec<_> = plugins
         .iter()
         .filter(|p| selected.contains(&p.name))

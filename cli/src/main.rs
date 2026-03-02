@@ -28,6 +28,11 @@ struct Cli {
 enum Commands {
     /// Browse and install plugins from the workers.io marketplace
     Init,
+    /// Install a specific plugin by name
+    Install {
+        /// Name of the plugin to install
+        name: String,
+    },
 }
 
 fn main() {
@@ -35,5 +40,6 @@ fn main() {
 
     match cli.command {
         Commands::Init => commands::init::run(),
+        Commands::Install { name } => commands::install::run(&name),
     }
 }
