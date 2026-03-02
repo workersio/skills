@@ -45,7 +45,7 @@ export async function packPlatform({
   // Create tarball
   const tarName = `${dir}-${version}.tar.gz`;
   const tarPath = path.join(srcDir, "dist", tarName);
-  execSync(`tar -czf "${tarPath}" -C "${tarballDir}" "${dir}"`, {
+  execSync(`COPYFILE_DISABLE=1 tar -czf "${tarPath}" -C "${tarballDir}" "${dir}"`, {
     stdio: "inherit",
   });
 
