@@ -32,6 +32,9 @@ enum Commands {
     Install {
         /// Name of the plugin to install
         name: String,
+        /// Installation scope: "project" or "user" (skips interactive prompt)
+        #[arg(long)]
+        scope: Option<String>,
     },
 }
 
@@ -40,6 +43,6 @@ fn main() {
 
     match cli.command {
         Commands::Init => commands::init::run(),
-        Commands::Install { name } => commands::install::run(&name),
+        Commands::Install { name, scope } => commands::install::run(&name, scope.as_deref()),
     }
 }

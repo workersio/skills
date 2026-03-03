@@ -1,6 +1,6 @@
 {
   "name": "@workersio/spec",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "CLI for the workers.io plugin marketplace for Claude Code",
   "bin": {
     "spec": "bin/spec"
@@ -9,10 +9,10 @@
     "bin"
   ],
   "optionalDependencies": {
-    "@workersio/spec-darwin-arm64": "0.1.1",
-    "@workersio/spec-darwin-x64": "0.1.1",
-    "@workersio/spec-linux-x64": "0.1.1",
-    "@workersio/spec-linux-arm64": "0.1.1"
+    "@workersio/spec-darwin-arm64": "0.1.2",
+    "@workersio/spec-darwin-x64": "0.1.2",
+    "@workersio/spec-linux-x64": "0.1.2",
+    "@workersio/spec-linux-arm64": "0.1.2"
   },
   "repository": {
     "type": "git",
