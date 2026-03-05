@@ -8,18 +8,37 @@ https://github.com/workersio/spec
 
 ## What This Project Does
 
-A collection of Claude Code plugins by workers.io. Each plugin is a self-contained directory under `plugins/` with a manifest and one or more skills. The root `.claude-plugin/marketplace.json` catalogs all plugins for marketplace discovery.
+A collection of Claude Code plugins by workers.io. Each plugin is a self-contained directory under `plugins/` with a manifest and one or more skills. The root `.claude-plugin/marketplace.json` catalogs all plugins for marketplace discovery. Users install via `npx skills add workersio/spec`.
 
 ## Plugins
 
-### spec (`plugins/spec/`)
+### save (`plugins/save/`)
 
 Converts Claude Code conversations into reusable agents. Analyzes the current session and distills it into an agent file saved to `.claude/agents/{name}.md`, invocable via `@{name}`.
 
-- **Skill**: `skills/save/SKILL.md` (`/spec:save`)
-- **Manifest**: `plugins/spec/.claude-plugin/plugin.json`
+- **Skill**: `skills/save/SKILL.md` (`/save`)
+- **Manifest**: `plugins/save/.claude-plugin/plugin.json`
 
-The skill embeds the prompt template directly in SKILL.md. It runs inline in Claude Code -- no binary, no subprocess.
+### kani-proof (`plugins/kani-proof/`)
+
+Writes Kani bounded model checker proofs for Solana and Rust programs. Includes reference docs for proof patterns, invariant design, coverage workflows, and Anchor verification.
+
+- **Skill**: `skills/kani-proof/SKILL.md` (`/kani-proof`)
+- **Manifest**: `plugins/kani-proof/.claude-plugin/plugin.json`
+
+### solana-audit (`plugins/solana-audit/`)
+
+Structured Solana smart contract security audits across 25 vulnerability types with reference docs, cheatsheet, audit checklist, and exploit case studies.
+
+- **Skill**: `skills/solana-audit/SKILL.md` (`/solana-audit`)
+- **Manifest**: `plugins/solana-audit/.claude-plugin/plugin.json`
+
+### axiom (`plugins/axiom/`)
+
+Verify, check, transform, and repair Lean 4 proofs using the Axiom (Axle) API and CLI.
+
+- **Skill**: `skills/axiom/SKILL.md` (`/axiom`)
+- **Manifest**: `plugins/axiom/.claude-plugin/plugin.json`
 
 ## Architecture
 

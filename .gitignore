@@ -2,6 +2,4 @@
 .env
 .DS_Store
 node_modules/
-target
-release/spec-*/
-release/dist/
+target/

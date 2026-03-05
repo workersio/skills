@@ -1,6 +1,6 @@
 # workers.io plugins
 
-A collection of Claude Code plugins by [workers.io](https://workers.io). Each plugin is self-contained, zero-dependency, and installs natively into Claude Code.
+A collection of Claude Code plugins by [workers.io](https://workers.io). Each plugin is self-contained, zero-dependency, and installs natively into Claude Code via the [skills ecosystem](https://github.com/nichochar/open-skills).
 
 ---
 
@@ -18,19 +18,19 @@ Writes Kani bounded model checker proofs for Solana and Rust programs. Includes 
 
 Structured Solana smart contract security audits across 25 vulnerability types. Includes reference docs for each vulnerability, a cheatsheet, audit checklist, and exploit case studies.
 
+### axiom
+
+Verify, check, transform, and repair Lean 4 proofs using the Axiom (Axle) API and CLI.
+
 ---
 
 ## Install
 
 ```bash
-npx @workersio/spec install <plugin-name>
+npx skills add workersio/spec
 ```
 
-Or browse and install interactively:
-
-```bash
-npx @workersio/spec init
-```
+This installs all plugins from the repository. Individual plugins can be selected during installation.
 
 ---
 
@@ -49,6 +49,9 @@ plugins/
     .claude-plugin/plugin.json
     skills/solana-audit/SKILL.md
     skills/solana-audit/references/
+  axiom/                           # Lean 4 proof verification via Axiom
+    .claude-plugin/plugin.json
+    skills/axiom/SKILL.md
 ```
 
 Each plugin lives under `plugins/` with its own `.claude-plugin/plugin.json` manifest and `skills/` directory. The root `.claude-plugin/marketplace.json` catalogs all plugins for marketplace discovery.

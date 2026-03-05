@@ -19,6 +19,11 @@
       "name": "solana-audit",
       "source": "./plugins/solana-audit",
       "description": "Structured Solana smart contract security audits"
+    },
+    {
+      "name": "axiom",
+      "source": "./plugins/axiom",
+      "description": "Verify, check, transform, and repair Lean 4 proofs using the Axiom (Axle) API and CLI"
     }
   ]
 }

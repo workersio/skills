@@ -1,4 +1,5 @@
 ---
+name: save
 description: Save this session as a reusable agent
 disable-model-invocation: true
 allowed-tools: Bash(mkdir *), Write(.claude/agents/*)
