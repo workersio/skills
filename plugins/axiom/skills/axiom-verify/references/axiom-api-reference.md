@@ -28,8 +28,10 @@ These fields are only present on specific endpoints (not universal):
 
 | Field | Type | Present on | Description |
 |---|---|---|---|
-| `okay` | `boolean` | `check`, `verify_proof` | Overall pass/fail verdict |
+| `okay` | `boolean` | `check`, `verify_proof` | Compilation pass/fail -- `true` if code compiles without Lean errors |
 | `failed_declarations` | `list[string]` | `check`, `verify_proof` | Declaration names with verification-level failures |
+
+**`okay` semantics:** The `okay` field reflects **compilation success only**. Code that compiles but uses `sorry` will have `okay: true` with non-empty `failed_declarations`. To confirm a proof is fully valid, check both `okay: true` AND `failed_declarations: []`.
 
 **`failed_declarations` semantics:** This field only captures *verification-level* failures -- sorry usage, signature mismatches, disallowed axioms. It does NOT capture compilation errors (tactic failures, syntax errors, name collisions). When code fails to compile, `okay` is `false` but `failed_declarations` is empty; check `lean_messages.errors` for the actual errors.
 
@@ -226,7 +228,7 @@ Converts between `theorem` and `lemma` keywords. By default converts to `lemma`.
 
 **POST** `/api/v1/theorem2sorry`
 
-Replaces theorem proofs with `sorry`. Useful for creating proof scaffolds or isolating specific theorems during development.
+Replaces theorem proofs with `sorry`. Useful for creating proof scaffolds or isolating specific theorems during development. Note: tactic-mode proofs (`by ...`) are converted to term-mode sorry (`:= sorry`).
 
 ### Parameters
 
@@ -401,7 +403,8 @@ Extracts `sorry` placeholders and error locations into top-level lemma stubs. Bu
 ### Response
 
 Returns standard fields plus:
-- `lemma_names` (list): Auto-generated lemma names
+- `lemma_names` (list): Auto-generated lemma names, following the pattern `{original_theorem_name}.sorried`
+- The generated lemma stubs are inserted **before** each original theorem in the output `content`. The original theorems remain in place (still with `sorry`).
 
 ---
 

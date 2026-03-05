@@ -139,10 +139,11 @@ Every response includes two types of messages -- understanding both is key to he
 - **Warnings**: Suspicious but non-fatal
 - **Infos**: Timing/debug output, unsolved goals
 
-**For `check` and `verify_proof`:** These return `okay` (boolean) and `failed_declarations` (list). Note the distinction:
+**For `check` and `verify_proof`:** These return `okay` (boolean) and `failed_declarations` (list). The `okay` flag reflects **compilation** success only -- it does not account for verification-level issues like `sorry` usage. Note the distinction:
 - **Compilation errors only** (tactic failures, syntax errors, name collisions): `okay` is `false`, but `failed_declarations` is empty. The errors appear in `lean_messages.errors`.
-- **Verification-level failures only** (sorry usage, signature mismatch, disallowed axioms): `okay` is `false` and the offending names appear in `failed_declarations`. The errors appear in `tool_messages.errors`.
-- **Both at once** (e.g., some theorems use sorry while other code has attribute/syntax errors): `okay` is `false`, `failed_declarations` lists the sorry/verification failures, and `lean_messages.errors` contains the compilation errors. Both must be checked.
+- **Verification-level failures only** (sorry usage, signature mismatch, disallowed axioms): `okay` is `true` (code compiles), but the offending names appear in `failed_declarations` and `tool_messages.errors`. A declaration using `sorry` compiles fine, so `okay` is `true` -- you must check `failed_declarations` to detect incomplete proofs.
+- **Both at once** (e.g., some theorems use sorry while other code has attribute/syntax errors): `okay` is `false` (due to compilation errors), `failed_declarations` lists the sorry/verification failures, and `lean_messages.errors` contains the compilation errors. Both must be checked.
+- **Fully valid proof**: `okay` is `true` and `failed_declarations` is empty. This is the only state that means the proof is both compilable and complete.
 
 **For transformation tools** (`repair_proofs`, `simplify_theorems`, `normalize`, etc.): These do not return `okay` or `failed_declarations`. Check that `lean_messages.errors` is empty and inspect the `content` field for the transformed result.
 
@@ -169,10 +170,11 @@ Every response includes two types of messages -- understanding both is key to he
 
 **Scaffold a proof development:**
 1. Write formal statements
-2. `theorem2sorry` -- stub out proofs with `sorry`
+2. `theorem2sorry` -- stub out proofs with `sorry` (use `names` parameter to target specific theorems)
 3. Fill in proofs incrementally
 4. `check` after each proof to verify progress
-5. `verify_proof` for final verification
+5. `sorry2lemma` -- track remaining obligations (generates `{name}.sorried` lemma stubs inserted before each sorry'd theorem)
+6. `verify_proof` for final verification
 
 **Test a conjecture:**
 1. `disprove` -- look for counterexamples first
@@ -182,7 +184,7 @@ Every response includes two types of messages -- understanding both is key to he
 
 ### Common Pitfalls
 
-- **Custom project attributes and constructs.** Files from Lean projects often define custom attributes (e.g., `@[category research open, AMS 11]`) and helper constructs (e.g., `answer(sorry)`) via project-specific imports. When `ignore_imports: true` replaces those imports with standard Mathlib, these custom constructs become unresolvable and produce compilation errors. **Before submitting**, strip custom attributes (`@[category ...]`, `@[AMS ...]`, etc.) and project-specific constructs that are not part of standard Mathlib. Note: `@[category ... open ...]` triggers a misleading "Candidate uses banned 'open private' command" tool error because the parser misinterprets the word `open` inside the attribute as the `open private` command -- this is a false positive.
+- **Custom project attributes and constructs.** Files from Lean projects often define custom attributes (e.g., `@[category research open, AMS 11]`) and helper constructs (e.g., `answer(sorry)`) via project-specific imports. When `ignore_imports: true` replaces those imports with standard Mathlib, these custom constructs become unresolvable and produce compilation errors. **Before submitting**, strip custom attributes and project-specific constructs using sed or similar: `sed 's/@\[category [^]]*\]//' file.lean` removes `@[category ...]` blocks; replace `answer(sorry)` with `True` or remove it entirely. Note: `@[category ... open ...]` triggers a misleading "Candidate uses banned 'open private' command" tool error because the parser misinterprets the word `open` inside the attribute as the `open private` command -- this is a false positive that disappears once the attribute is stripped.
 - **`autoImplicit` is off in Mathlib environments.** Always declare type variables explicitly (e.g., `variable {α : Type*}` or `(α : Type*)`). Implicit variables like `List α` without declaring `α` will fail.
 - **Mathlib name shadowing.** If your theorem names match existing Mathlib declarations (e.g., `add_zero`, `add_comm`, `mul_comm`), you'll get "already declared" errors and all transformation tools will silently return unchanged content with zero stats. The error appears only in `lean_messages.errors`, not `tool_messages` -- you must inspect `lean_messages` to notice the problem. Use `rename` to give theorems unique names, or prefix with a namespace.
 - **`omega` cannot see through opaque definitions.** The `omega` tactic works on linear arithmetic over `Nat` and `Int`, but it treats user-defined functions as opaque. If you define `def my_double (n : Nat) := n + n` and try to prove `my_double n = 2 * n` with `omega`, it will fail because `omega` doesn't know what `my_double` computes. Use `unfold my_double` (or `simp [my_double]`) before `omega` to expose the definition.

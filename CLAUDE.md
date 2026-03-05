@@ -37,7 +37,7 @@ Structured Solana smart contract security audits across 25 vulnerability types w
 
 Verify, check, transform, and repair Lean 4 proofs using the Axiom (Axle) API and CLI.
 
-- **Skill**: `skills/axiom/SKILL.md` (`/axiom`)
+- **Skill**: `skills/axiom-verify/SKILL.md` (`/axiom`)
 - **Manifest**: `plugins/axiom/.claude-plugin/plugin.json`
 
 ## Architecture

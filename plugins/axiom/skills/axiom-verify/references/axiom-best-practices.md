@@ -19,7 +19,7 @@ Check both when debugging failures. A `tool_messages` error about imports is dif
 
 **For transformation tools** (normalize, rename, simplify, repair, etc.): Inspect `lean_messages.errors` first. Rule of thumb: if the input compiles, the output should compile.
 
-**For evaluation tools** (verify_proof, check): Non-empty `lean_messages.errors` is expected diagnostic output. Check `result.okay` for the pass/fail verdict.
+**For evaluation tools** (verify_proof, check): Non-empty `lean_messages.errors` is expected diagnostic output. Check `result.okay` for compilation success AND `result.failed_declarations` for verification-level issues. `okay: true` means the code compiles, but `failed_declarations` may still list theorems using `sorry`. A fully valid proof has `okay: true` and `failed_declarations: []`.
 
 ## Import Handling
 
