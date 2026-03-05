@@ -1,6 +1,6 @@
 # workers.io plugins
 
-A collection of Claude Code plugins by [workers.io](https://workers.io). Each plugin is self-contained, zero-dependency, and installs natively into Claude Code via the [skills ecosystem](https://github.com/nichochar/open-skills).
+A collection of Claude Code plugins by [workers.io](https://workers.io).
 
 ---
 
