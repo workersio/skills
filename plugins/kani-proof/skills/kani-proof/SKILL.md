@@ -1,45 +1,110 @@
 ---
 name: kani-proof
-description: Writes Kani bounded model checker proofs for Rust programs. Proves conservation, isolation, arithmetic safety, and access control properties. Use when the user asks to write formal verification, Kani proofs, model checking, or when code contains kani::, #[kani::proof], or bounded model checking.
+description: Writes Kani bounded model checker proofs for Rust programs. Proves conservation, isolation, arithmetic safety, and access control properties. Use when the user asks to write formal verification, Kani proofs, model checking, or when code contains kani::, #[kani::proof], or bounded model checking. Also use when the user mentions proving properties, verifying invariants, or checking for overflows in Rust code.
 ---
 
-# Kani Formal Verification — Methodology Guide
+# Kani Formal Verification
 
-This skill teaches the methodology for writing Kani proofs that actually verify. It provides general guidance — adapt it to your specific codebase.
+Kani is a bounded model checker — it explores ALL possible values of symbolic inputs within bounds, making proofs exhaustive (not sampled like fuzzing).
 
-## Reference Files
+## Critical Rules
 
-Read the relevant reference before writing proofs:
+These rules prevent the most common proof failures. Violating any one will likely cause the proof to fail.
 
-1. [references/proof-patterns.md](references/proof-patterns.md) — 13 proof patterns with templates and shared helper code
-2. [references/kani-features.md](references/kani-features.md) — Kani API, solver selection, loop unwinding, stubbing, function contracts
+1. **No `#[kani::unwind]` or `#[kani::solver]` on first attempt.** Omit both decorators entirely. Only add `#[kani::unwind(N)]` after getting an "unwinding assertion" error, and only add `#[kani::solver(cadical)]` after a timeout. Kani's defaults work better than guessing.
 
-## Step 1: Understand the Target
+2. **Assert the target property inline, not via helper methods.** Do not call methods that check multiple invariants or iterate over collections — they introduce loops, extra assertions, and unrelated failure points. Read the struct fields directly and write the comparison yourself:
+   ```rust
+   // WRONG — helper checks more than the target property, adds loops
+   assert!(engine.check_all_invariants());
 
-Before writing any proof:
+   // RIGHT — asserts exactly what you're proving, no extra logic
+   assert!(engine.x.get() >= engine.y.get() + engine.z.get());
+   ```
 
-1. **Read the function** you're proving properties about. Understand what it mutates.
-2. **Identify loops** — count maximum iterations. This determines your unwind bound.
-3. **Identify state** — what struct fields get modified? What are the invariants?
-4. **Check for existing proofs** — look for `tests/kani.rs` or `#[kani::proof]` in the codebase.
+3. **Use `kani::any()` without `kani::assume()` bounds first.** Only add assume constraints after a timeout or OOM. Unconstrained symbolic values are often easier for the solver than bounded ranges.
 
-## Step 2: Prepare the Codebase (if needed)
+4. **Build state through public API only.** Use constructors, `add_user()`, `deposit()`, etc. Never assign struct fields directly — it creates unreachable states that cause spurious failures. The only exception is `vault` or similar top-level fields with no setter API.
 
-Only if the codebase hasn't been prepared for Kani yet:
+5. **Stack allocation, not Box.** Use `let mut engine = Engine::new(params)` not `Box::new(Engine::new(params))`. Box adds heap tracking overhead to the solver.
 
-- **Reduce state space** — For arrays/collections with configurable size, use `#[cfg(kani)]` to reduce bounds during verification:
-  ```rust
-  #[cfg(kani)] pub const MAX_ITEMS: usize = 4;
-  #[cfg(not(kani))] pub const MAX_ITEMS: usize = 64;
-  ```
-- **Cargo.toml** — Add `[workspace.metadata.kani]` with `flags = { tests = true }` if proofs live in test files
-- **Crate root** — Add `#[cfg(kani)] extern crate kani;` if needed
+6. **Small config parameters.** If the constructor takes a size/capacity parameter that controls a loop (e.g. `max_accounts`), pass a small value (4–8) that matches `#[cfg(kani)]` constants found by the analyzer agent.
 
-## Step 3: Write the Proof
+## Workflow
 
-### Harness Structure
+### Step 1 — Analyze the Codebase
 
-Every Kani proof follows this pattern:
+Before writing any proof, spawn an Explore agent following [references/agents/kani-analyzer-agent.md](references/agents/kani-analyzer-agent.md). It will return loop bounds, existing infrastructure, and state construction patterns. Do not skip this.
+
+### Step 2 — Write the Proof
+
+Use the agent's output to write a harness. Select a pattern from the [pattern table](#proof-patterns) and see [references/proof-patterns.md](references/proof-patterns.md) for templates.
+
+### Step 3 — Verify and Iterate
+
+Run `cargo kani --harness proof_name` and diagnose failures using the [diagnosis table](#diagnosing-failures). See [references/kani-features.md](references/kani-features.md) for the full Kani API (contracts, stubbing, concrete playback, partitioned verification).
+
+## Kani-Specific Concepts
+
+### Non-Vacuity
+
+A proof can report SUCCESS while proving nothing. This happens when no execution path reaches assertions — because the operation always fails for your inputs, assumptions are contradictory, results are discarded, or state is empty/trivial.
+
+**Detect** with `kani::cover!(condition, "message")` — if Kani reports UNSATISFIABLE, that path is never taken.
+
+**Prevent** by handling results explicitly:
+
+```rust
+// VACUOUS — if operation always fails, nothing is checked
+if result.is_ok() { assert!(invariant); }
+
+// NON-VACUOUS — proof fails if operation can't succeed
+match result {
+    Ok(_) => { /* assert properties */ },
+    Err(_) => { kani::assert(false, "must succeed"); unreachable!() }
+};
+```
+
+**Contradictory assumptions:** If every path hits `assume(false)` or all `kani::cover!()` checks are UNSATISFIABLE, your `kani::assume()` constraints are contradictory — no valid inputs exist. Remove constraints and start unconstrained.
+
+### Loop Unwinding
+
+Only relevant if you get an "unwinding assertion" error. Add `#[kani::unwind(N)]` where N = max_iterations + 1. Trace ALL loops in the call graph (target + callees + constructors). Check for `#[cfg(kani)]` constants that reduce collection sizes.
+
+**Parameter-driven loops:** If a constructor loops over a config param (e.g. `for i in 0..capacity`), that param must be small (4–8). Use `#[cfg(kani)]` constants when they exist.
+
+## Diagnosing Failures
+
+| Kani Output | Fix |
+|-------------|-----|
+| `unwinding assertion` | Add `#[kani::unwind(N)]` with N = loop_count + 1 |
+| Timeout / solver hang | Add `kani::assume()` to narrow ranges, try `#[kani::solver(cadical)]` |
+| `VERIFICATION:- FAILED` | Use `cargo kani -Z concrete-playback --concrete-playback=print --harness name` |
+| OOM / out of memory | Reduce state size, remove Box, fewer symbolic variables |
+| `assume(false)` on all paths | Remove `kani::assume()` constraints — they're contradictory |
+| `VERIFICATION:- SUCCESSFUL` | Check `kani::cover!()` statements are SATISFIED (non-vacuity) |
+
+**Iterative approach:** Start SIMPLE (no decorators, unconstrained inputs, API-built state) → add constraints only on timeout/OOM → add unwind only on unwinding errors → switch solver only on timeout.
+
+## Proof Patterns
+
+See [references/proof-patterns.md](references/proof-patterns.md) for templates.
+
+| Pattern | When to Use | What It Proves |
+|---------|-------------|----------------|
+| Conservation | Moves, creates, or destroys quantities | Accounting equation preserved |
+| Frame / Isolation | Targets one entity in multi-entity system | Bystander entities unchanged |
+| INV Preservation | Any state mutation | Canonical invariant holds before and after |
+| Error Path | Input validation / preconditions | Specific error + state completely unchanged |
+| Monotonicity | Counters, timestamps, accumulators | Value only moves in one direction |
+| Idempotency | Settlement, sync, recompute | Applying twice = applying once |
+| Arithmetic Safety | Numeric computation | No overflow/underflow/div-by-zero |
+| Access Control | Privileged operations | Unauthorized callers rejected |
+| State Machine | Lifecycle transitions | Only valid transitions occur |
+| Inductive Delta | Core accounting (strongest form) | Equation holds with raw primitives |
+| Lifecycle / Sequence | Multi-step user flows | Properties hold through chained operations |
+
+### Harness Skeleton
 
 ```rust
 #[cfg(kani)]
@@ -47,191 +112,30 @@ mod kani_proofs {
     use super::*;
 
     #[kani::proof]
-    #[kani::unwind(N)]        // Set based on loop analysis
-    #[kani::solver(cadical)]  // Good default for complex proofs
+    // NO #[kani::unwind] — only add after getting unwinding assertion error
+    // NO #[kani::solver] — only add after getting timeout
     fn proof_name() {
-        // 1. Create state
-        // 2. Set up symbolic inputs with bounded ranges
-        // 3. Assert precondition (invariant holds before)
-        // 4. Call the function under test
-        // 5. Assert postcondition (invariant holds after + domain-specific checks)
-        // 6. Add kani::cover!() for non-vacuity evidence
+        // 1. Build state through public API (NOT field mutation)
+        // 2. Symbolic inputs: kani::any() with NO kani::assume() bounds
+        // 3. Call function, handle result explicitly (no if result.is_ok())
+        // 4. Assert ONLY the target property using raw field access
+        //    (NOT check_conservation or other aggregate methods)
+        // 5. kani::cover!() for non-vacuity
     }
 }
 ```
 
-### Determining Unwind Bounds
+## Codebase Preparation
 
-The `#[kani::unwind(N)]` attribute controls how many loop iterations Kani explores. Getting this wrong is the #1 cause of verification failure.
+The Explore agent identifies what's needed. Common preparations:
 
-**How to determine N:**
-1. Find all loops in the function AND its callees (including constructors)
-2. Determine the maximum number of iterations for each loop
-3. Set N to **max_iterations + 1** (Kani needs one extra to confirm termination)
-4. If multiple nested loops exist, you may need a higher bound
+- `#[cfg(kani)] const MAX_ITEMS: usize = 4;` — reduce collection sizes
+- `[workspace.metadata.kani] flags = { tests = true }` in Cargo.toml
+- `#[cfg(kani)] extern crate kani;` at crate root
 
-**If verification fails with "unwinding assertion" errors** → increase the bound.
-**If verification times out** → either reduce symbolic ranges or use function contracts to break the problem into smaller pieces.
+## Reference Files
 
-**If you can't determine the bound**, start with a small value and increase until unwinding assertions disappear. Common starting points:
-- No loops: omit the attribute entirely
-- Simple loops over small arrays: `unwind(array_size + 1)`
-- Nested loops or constructors with initialization: may need 2-4x the array size
-
-### Symbolic Inputs — Keep Ranges Narrow
-
-Use `kani::any()` with `kani::assume()` to test ranges of inputs. **Narrower ranges = faster verification.**
-
-```rust
-// Generate symbolic value
-let amount: u128 = kani::any();
-
-// Constrain to a reasonable range — prevents solver timeout
-kani::assume(amount > 0 && amount <= 10_000);
-```
-
-**Guidelines for choosing ranges:**
-- Start with the smallest range that exercises the code paths you care about
-- If the solver times out, narrow the ranges further
-- Use concrete values for inputs that aren't the focus of the proof (e.g., timestamps, indices)
-- Never leave large numeric types (u128, i128) fully unconstrained — the solver will timeout
-- Avoid `i128::MIN` for signed values (negation overflow)
-
-### Solver Selection
-
-- **`cadical`** — Good default for complex proofs with arithmetic
-- **`kissat`** — Try this if cadical is slow; often faster for long-running harnesses
-- **`minisat`** — Fast for simple proofs
-
-If a proof takes >30 seconds, try switching solvers before increasing bounds.
-
-### Non-Vacuity — Proving Your Proof Proves Something
-
-A **vacuous proof** passes because no execution path reaches the assertions. This is the most dangerous pitfall.
-
-**How to prevent vacuity:**
-
-1. **Force success when expected** — If the operation should succeed given your setup, use an assertion that fails the proof if it doesn't:
-   ```rust
-   // If operation should succeed, make the proof FAIL if it doesn't
-   match state.my_operation(target, amount) {
-       Ok(v) => v,
-       Err(_) => { kani::assert(false, "operation must succeed"); unreachable!() }
-   };
-   ```
-
-2. **Add coverage witnesses** — `kani::cover!()` checks if a condition CAN be satisfied:
-   ```rust
-   kani::cover!(true, "proof body was reached");
-   kani::cover!(result > 0, "non-trivial result produced");
-   ```
-   If Kani reports these as UNSATISFIABLE, your proof may be vacuous.
-
-3. **Be cautious with `if result.is_ok()` guards** — If the operation always fails for your symbolic inputs, guarded assertions are silently skipped and the proof becomes vacuous:
-   ```rust
-   // Risky — if operation always fails, nothing is checked
-   if result.is_ok() {
-       assert!(invariant_holds());  // never reached!
-   }
-   ```
-   If you use this pattern (e.g., when the operation legitimately may fail for some inputs), add `kani::cover!(result.is_ok(), "operation succeeded")` and verify Kani reports it as SATISFIED.
-
-### Error Path Proofs
-
-When testing that an operation correctly rejects invalid inputs:
-
-1. **Check the specific error variant**, not just that any error occurred:
-   ```rust
-   match result {
-       Err(MyError::InsufficientBalance) => { /* expected */ },
-       Err(other) => panic!("wrong error: {:?}", other),
-       Ok(_) => panic!("should have failed"),
-   }
-   ```
-
-2. **Verify state wasn't corrupted** — snapshot state before the call, assert it's unchanged after:
-   ```rust
-   let state_before = snapshot(&state);
-   let result = state.operation(bad_input);
-   match result {
-       Err(MyError::ExpectedError) => { /* expected */ },
-       Err(other) => panic!("wrong error: {:?}", other),
-       Ok(_) => panic!("operation should have failed"),
-   }
-   let state_after = snapshot(&state);
-   assert_eq!(state_before, state_after, "state unchanged on error");
-   ```
-
-### Domain-Specific Checks
-
-Don't just check that an invariant holds — check the **exact effect** of the operation:
-
-| Check Type | Example |
-|-----------|---------|
-| Delta/exact effect | `field_after == field_before + amount` |
-| Monotonicity | `counter_after >= counter_before` |
-| Idempotency | `f(f(state)) == f(state)` |
-| Frame/isolation | Bystander fields unchanged after operation on different entity |
-| Zero-sum | `total_credits + total_debits == 0` |
-| Boundary | Field stays within valid range after operation |
-
-### Frame / Isolation Proofs
-
-To prove an operation only mutates specific fields:
-
-1. Snapshot ALL mutable fields of bystander entities before the operation
-2. Execute the operation on the target entity
-3. Assert every bystander field is unchanged
-
-**Tip:** For operations with side effects (fee collection, etc.), consider using zero-fee parameters to isolate the mutation you're testing.
-
-## Step 4: Run and Iterate
-
-```bash
-# Run a single proof
-cargo kani --harness proof_name
-
-# Run all proofs
-cargo kani --tests
-```
-
-**If verification fails:**
-- Check for "unwinding assertion" → increase unwind bound
-- Check for UNDETERMINED → may need to stub unsupported features
-- Check for timeout → narrow symbolic ranges or switch solver
-- Check for counterexample → use concrete playback to debug:
-  ```bash
-  cargo kani -Z concrete-playback --concrete-playback=print --harness proof_name
-  ```
-
-**Strengthen proofs iteratively:**
-- WEAK (concrete values) → STRONG (symbolic with bounds) → INDUCTIVE (raw primitives, no data structures)
-
-## Common Pitfalls
-
-1. **Insufficient unwind** — The #1 failure cause. Always check for loops in constructors and callees, not just the function itself.
-2. **Unbounded symbolic values** — Large types (u128, i128) without `kani::assume()` constraints will timeout.
-3. **Vacuous proofs** — All assertions guarded behind `if result.is_ok()` when the operation always fails.
-4. **Generic error checks** — `assert!(result.is_err())` passes on ANY error, not the one you're testing.
-5. **Missing aggregate sync** — After manually setting struct fields, recompute any derived/aggregate fields before asserting invariants.
-6. **Testing empty state** — Invariants on empty/fresh state are trivially true. Use populated state with multiple entities, non-zero balances, and active positions.
-
-## Proof Patterns Quick Reference
-
-See [references/proof-patterns.md](references/proof-patterns.md) for full templates.
-
-| Pattern | Use When | Key Idea |
-|---------|----------|----------|
-| P1: Conservation | Quantity-moving operations | Accounting equation preserved |
-| P2: Frame/Isolation | Multi-entity systems | Bystander state unchanged |
-| P3: INV Preservation | Every mutation | Canonical invariant holds after |
-| P4: Error Path | Input validation | Specific error + state unchanged |
-| P5: Monotonicity | Timestamps, counters | Value only increases/decreases |
-| P6: Idempotency | Sync, settlement | Applying twice = applying once |
-| P7: Arithmetic Safety | Any numeric code | No overflow/underflow |
-| P8: Access Control | Privileged operations | Unauthorized callers rejected |
-| P9: State Machine | Lifecycle states | Only valid transitions occur |
-| P10: Inductive Delta | Accounting operations | Raw primitives, strongest form |
-| P11: Concrete Known-Bad | Specific bugs | Fixed inputs, regression test |
-| P12: Lifecycle | Multi-step flows | Chain operations, check at each step |
-| P13: Anti-Exploit | Critical operations | Multi-path, negative, regression |
+- [references/proof-patterns.md](references/proof-patterns.md) — Pattern catalog with templates and examples
+- [references/kani-features.md](references/kani-features.md) — Kani API: contracts, stubbing, concrete playback, partitioned verification
+- [references/invariant-design.md](references/invariant-design.md) — Layered invariant design methodology
+- [references/agents/kani-analyzer-agent.md](references/agents/kani-analyzer-agent.md) — Explore agent for pre-proof codebase analysis
