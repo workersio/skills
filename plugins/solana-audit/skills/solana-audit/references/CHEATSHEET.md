@@ -254,3 +254,25 @@ let user_token = Account::<TokenAccount>::try_from(account)?;
 **Grep:** Token operations without `token_account.is_frozen()` check
 **Pattern:** Operations on frozen accounts may fail or lock funds
 **Ref:** Low severity. Check only if program explicitly handles frozen states.
+
+---
+
+## Category R: Runtime & Deployment
+
+### R-1: Upgrade Authority Risk [MEDIUM]
+**Keywords:** `upgrade_authority`, `set_authority`, `BPFUpgradeableLoader`, `programdata`
+**Grep:** Check if program is upgradeable and who holds authority
+**Pattern:** Single-key upgrade authority on high-TVL program — compromised key = full program takeover
+**Ref:** Check `solana program show <program_id>` for upgrade authority. Should be multisig, governance, or revoked.
+
+### R-2: Missing Rent Exemption [LOW]
+**Keywords:** `rent`, `is_exempt`, `minimum_balance`, `Rent::get`
+**Grep:** `grep -rn 'system_instruction::create_account' --include='*.rs'` — check lamports parameter
+**Pattern:** Account created with insufficient lamports for rent exemption — will be garbage collected
+**Ref:** Low severity. Modern Solana enforces rent exemption on account creation.
+
+### R-3: Unverified Build [INFORMATIONAL]
+**Keywords:** `verifiable`, `anchor-build`, `solana-verify`, `checksum`
+**Grep:** Check for `Anchor.toml` with `[programs.verifiable]` or CI scripts running `solana-verify`
+**Pattern:** Deployed bytecode cannot be verified against source — users cannot confirm program behavior
+**Ref:** Informational. Recommend Anchor Verifiable Build or `solana-verify` for mainnet deployments.
