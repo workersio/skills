@@ -119,8 +119,8 @@ Axiom offers three equivalent interfaces. Choose based on context:
 
 | Interface | Best for | Install |
 |---|---|---|
-| **HTTP API** (curl) | Claude Code, scripts, CI/CD | None needed |
-| **CLI** (`axle`) | Interactive terminal use | `pip install axiom-axle` |
+| **CLI** (`axle`) | Local file operations, Claude Code | `pip install axiom-axle` |
+| **HTTP API** (curl) | Dynamic/generated code, scripts, CI/CD | None needed |
 | **Python client** | Python scripts, notebooks | `pip install axiom-axle` |
 
-In Claude Code, prefer the HTTP API via curl since it requires no installation and gives direct access to the full response JSON.
+For local file operations (check, verify, normalize, repair, etc.), prefer the `axle` CLI -- it reads files directly from disk, has simpler syntax, and can write output with `-o`. Use the HTTP API when constructing Lean code dynamically or building automation scripts where content exists as strings rather than files.

@@ -1,6 +1,6 @@
 ---
 name: axiom-verify
-description: Verify, check, transform, and repair Lean 4 proofs using the Axiom (Axle) API. Supports proof verification, syntax checking, theorem extraction, code transformation (rename, merge, simplify), proof repair, and disproving. Use this skill whenever the user works with Lean 4 code, formal mathematics, Mathlib theorems, or mentions axiom, axle, lean verify, proof verification, formal proof, or theorem checking -- even if they don't explicitly say "axiom" but are clearly working with Lean proofs that need machine verification.
+description: Verify, check, transform, and repair Lean 4 proofs using the Axiom (Axle) CLI and API. Supports proof verification, syntax checking, theorem extraction, code transformation (rename, merge, simplify), proof repair, and disproving. Use this skill whenever the user works with Lean 4 code, formal mathematics, Mathlib theorems, or mentions axiom, axle, lean verify, proof verification, formal proof, or theorem checking -- even if they don't explicitly say "axiom" but are clearly working with Lean proofs that need machine verification.
 allowed-tools: Bash(curl *), Bash(axle *), Bash(echo *), Bash(cat *), Bash(jq *), Read
 argument-hint: [file.lean]
 ---
@@ -15,7 +15,7 @@ Read these as needed based on the task:
 
 1. [references/axiom-configuration.md](references/axiom-configuration.md) -- Setup, authentication, environment selection. Read this first if the user hasn't configured Axiom yet.
 2. [references/axiom-api-reference.md](references/axiom-api-reference.md) -- All 14 API endpoints with parameters and response formats. Read when you need exact parameter names or response fields.
-3. [references/axiom-cli-reference.md](references/axiom-cli-reference.md) -- CLI commands and options. Read if the user prefers the `axle` CLI over curl.
+3. [references/axiom-cli-reference.md](references/axiom-cli-reference.md) -- CLI commands and options. Read for exact flags and usage details when working with local files.
 4. [references/axiom-best-practices.md](references/axiom-best-practices.md) -- Workflow guidance, scope limitations, and tips. Read when planning a multi-step workflow or hitting unexpected behavior.
 
 ## Workflow
@@ -48,84 +48,86 @@ When unsure which tool to use:
 
 ### Step 2: Execute
 
-**From Claude Code**, prefer the HTTP API via curl -- it requires no installation and gives direct access to the full response JSON. All endpoints are POST requests to `https://axle.axiommath.ai/api/v1/{tool_name}`.
+**When working with local files**, prefer the `axle` CLI -- it reads files directly from disk, has simpler syntax, and can write output to files with `-o`. The CLI reads `AXLE_API_KEY` from the environment automatically. Note: CLI commands use hyphens (e.g., `verify-proof`), while the HTTP API uses underscores (`verify_proof`). All code is sent to `axle.axiommath.ai` for compilation against a full Mathlib environment -- the CLI is not local verification.
 
-**For application integrations** (CI/CD, scripts, notebooks), the curl API or Python client (`pip install axiom-axle`) are the right choices. The CLI (`axle`) is a convenience wrapper around the same cloud API -- it is not local verification. All code is sent to `axle.axiommath.ai` for compilation against a full Mathlib environment.
+**When constructing Lean code dynamically** (generating content in scripts, CI/CD pipelines, or building code strings programmatically), use the HTTP API via curl or the Python client (`pip install axiom-axle`). The API accepts content as JSON strings, which is better suited for generated or in-memory code.
+
+**Check code compiles:**
+
+```bash
+axle check file.lean --environment lean-4.28.0 --ignore-imports
+```
 
 **Verify a proof:**
 
 ```bash
-curl -s -X POST https://axle.axiommath.ai/api/v1/verify_proof \
-  -H "Authorization: Bearer $AXLE_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d "$(jq -n \
-    --arg formal "$(cat formal_statement.lean)" \
-    --arg content "$(cat proof.lean)" \
-    '{formal_statement: $formal, content: $content, environment: "lean-4.28.0", ignore_imports: true}')" \
-  | jq '{okay, failed_declarations, lean_errors: .lean_messages.errors, tool_errors: .tool_messages.errors, tool_infos: .tool_messages.infos}'
+axle verify-proof formal_statement.lean proof.lean \
+  --environment lean-4.28.0 --ignore-imports
 ```
 
-**Check code compiles:**
+**Repair broken proofs:**
+
+```bash
+axle repair-proofs file.lean --environment lean-4.28.0 --ignore-imports \
+  --repairs remove_extraneous_tactics,apply_terminal_tactics
+```
+
+**Disprove a conjecture:**
+
+```bash
+axle disprove file.lean --environment lean-4.28.0 --ignore-imports
+```
+
+**Normalize a file (flatten sections/namespaces):**
+
+```bash
+axle normalize file.lean -o normalized.lean --environment lean-4.28.0 --ignore-imports
+```
+
+**Extract theorems:**
+
+```bash
+axle extract-theorems file.lean --environment lean-4.28.0 --ignore-imports
+```
+
+**Simplify theorems:**
+
+```bash
+axle simplify-theorems file.lean --environment lean-4.28.0 --ignore-imports
+```
+
+**Rename declarations:**
+
+```bash
+axle rename file.lean --declarations '{"old_name": "new_name"}' \
+  --environment lean-4.28.0 --ignore-imports
+```
+
+**Stub proofs with sorry:**
+
+```bash
+axle theorem2sorry file.lean --environment lean-4.28.0 --ignore-imports
+```
+
+**Write transformation output to a file** (works with normalize, repair-proofs, simplify-theorems, rename, etc.):
+
+```bash
+axle normalize file.lean -o output.lean -f --environment lean-4.28.0 --ignore-imports
+```
+
+**API example** (for dynamically constructed code):
 
 ```bash
 curl -s -X POST https://axle.axiommath.ai/api/v1/check \
   -H "Authorization: Bearer $AXLE_API_KEY" \
   -H "Content-Type: application/json" \
   -d "$(jq -n \
-    --arg content "$(cat file.lean)" \
+    --arg content "$LEAN_CODE" \
     '{content: $content, environment: "lean-4.28.0", ignore_imports: true}')" \
   | jq '{okay, failed_declarations, lean_errors: .lean_messages.errors, tool_errors: .tool_messages.errors}'
 ```
 
-**Repair broken proofs:**
-
-```bash
-curl -s -X POST https://axle.axiommath.ai/api/v1/repair_proofs \
-  -H "Authorization: Bearer $AXLE_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d "$(jq -n \
-    --arg content "$(cat file.lean)" \
-    '{content: $content, environment: "lean-4.28.0", ignore_imports: true, repairs: ["remove_extraneous_tactics", "apply_terminal_tactics"]}')" \
-  | jq '{content, repair_stats, lean_errors: .lean_messages.errors, tool_errors: .tool_messages.errors}'
-```
-
-**Disprove a conjecture:**
-
-```bash
-curl -s -X POST https://axle.axiommath.ai/api/v1/disprove \
-  -H "Authorization: Bearer $AXLE_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d "$(jq -n \
-    --arg content "$(cat conjecture.lean)" \
-    '{content: $content, environment: "lean-4.28.0", ignore_imports: true}')" \
-  | jq '{disproved_theorems, results, lean_errors: .lean_messages.errors, tool_errors: .tool_messages.errors}'
-```
-
-**Normalize a file (flatten sections/namespaces):**
-
-```bash
-curl -s -X POST https://axle.axiommath.ai/api/v1/normalize \
-  -H "Authorization: Bearer $AXLE_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d "$(jq -n \
-    --arg content "$(cat file.lean)" \
-    '{content: $content, environment: "lean-4.28.0", ignore_imports: true}')" \
-  | jq '{content, normalize_stats, lean_errors: .lean_messages.errors, tool_errors: .tool_messages.errors}'
-```
-
-**Extract theorems:**
-
-```bash
-curl -s -X POST https://axle.axiommath.ai/api/v1/extract_theorems \
-  -H "Authorization: Bearer $AXLE_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d "$(jq -n \
-    --arg content "$(cat file.lean)" \
-    '{content: $content, environment: "lean-4.28.0", ignore_imports: true}')" \
-  | jq '{theorems: (.documents | keys), lean_errors: .lean_messages.errors, tool_warnings: .tool_messages.warnings}'
-```
-
-For the full parameter reference for all 14 endpoints, see [references/axiom-api-reference.md](references/axiom-api-reference.md).
+For the full CLI command reference, see [references/axiom-cli-reference.md](references/axiom-cli-reference.md). For the full API parameter reference for all 14 endpoints, see [references/axiom-api-reference.md](references/axiom-api-reference.md).
 
 ### Step 3: Interpret Results
 
@@ -150,7 +152,7 @@ Every response includes two types of messages -- understanding both is key to he
 
 **For `disprove`:** Check `disproved_theorems` (list of refuted names) and `results` (dict mapping each theorem name to a human-readable outcome string). If a counterexample is found, the name appears in `disproved_theorems` and the `results` entry contains the counterexample. If disprove fails (the theorem may be true), `disproved_theorems` is empty and the `results` entry describes why the negation could not be proven.
 
-**Import handling:** Include `"ignore_imports": true` in every request unless you have a specific reason not to (e.g., testing that exact imports are correct). Without this flag, import mismatches return a `user_error` string instead of the standard response format, which breaks JSON parsing and hides the actual verification result. Code snippets, code from different Lean/Mathlib versions, and proof-logic checks all require this flag.
+**Import handling:** Always use `--ignore-imports` (CLI) or `"ignore_imports": true` (API) unless you have a specific reason not to (e.g., testing that exact imports are correct). Without this flag, import mismatches return a `user_error` string instead of the standard response format, which breaks JSON parsing and hides the actual verification result. Code snippets, code from different Lean/Mathlib versions, and proof-logic checks all require this flag.
 
 **`user_error` responses:** Several error conditions return `{"user_error": "...", "info": {...}}` instead of the standard response format. This includes import mismatches (when `ignore_imports` is false), unrecognized declaration names in `rename`, and other request-level validation failures. Always check for a `user_error` field before parsing `lean_messages`/`tool_messages`.
 
