@@ -139,10 +139,11 @@ Every response includes two types of messages -- understanding both is key to he
 - **Warnings**: Suspicious but non-fatal
 - **Infos**: Timing/debug output, unsolved goals
 
-**For `check` and `verify_proof`:** These return `okay` (boolean) and `failed_declarations` (list). The `okay` flag reflects **compilation** success only -- it does not account for verification-level issues like `sorry` usage. Note the distinction:
-- **Compilation errors only** (tactic failures, syntax errors, name collisions): `okay` is `false`, but `failed_declarations` is empty. The errors appear in `lean_messages.errors`.
-- **Verification-level failures only** (sorry usage, signature mismatch, disallowed axioms): `okay` is `true` (code compiles), but the offending names appear in `failed_declarations` and `tool_messages.errors`. A declaration using `sorry` compiles fine, so `okay` is `true` -- you must check `failed_declarations` to detect incomplete proofs.
-- **Both at once** (e.g., some theorems use sorry while other code has attribute/syntax errors): `okay` is `false` (due to compilation errors), `failed_declarations` lists the sorry/verification failures, and `lean_messages.errors` contains the compilation errors. Both must be checked.
+**For `check`:** Returns `okay` (boolean) and `failed_declarations` (list). The `okay` flag reflects **compilation success only** -- `true` if the code compiles without errors (warnings like `sorry` don't affect it). `failed_declarations` is empty when `okay` is `true`. The `check` endpoint does **not** detect sorry usage or other verification-level issues -- it only checks that code compiles. Use `verify_proof` to validate that proofs are complete.
+
+**For `verify_proof`:** Returns `okay` (boolean) and `failed_declarations` (list). The `okay` flag reflects **proof validity** -- `true` only if the code compiles **and** passes all verification checks (no sorry, signatures match, no disallowed axioms). Note the distinction:
+- **Compilation errors** (tactic failures, syntax errors, name collisions): `okay` is `false`, `failed_declarations` is empty. The errors appear in `lean_messages.errors`.
+- **Verification failures** (sorry usage, signature mismatch, disallowed axioms): `okay` is `false`, and the offending names appear in `failed_declarations` with details in `tool_messages.errors`.
 - **Fully valid proof**: `okay` is `true` and `failed_declarations` is empty. This is the only state that means the proof is both compilable and complete.
 
 **For transformation tools** (`repair_proofs`, `simplify_theorems`, `normalize`, etc.): These do not return `okay` or `failed_declarations`. Check that `lean_messages.errors` is empty and inspect the `content` field for the transformed result.

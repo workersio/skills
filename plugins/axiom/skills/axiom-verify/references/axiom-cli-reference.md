@@ -31,7 +31,7 @@ Global options must appear **before** the subcommand name:
 
 ## Input Methods
 
-All commands accept input as a file path or from stdin via `-`:
+All commands accept input as a file path or from stdin via `-`. Many commands support `-o/--output` to write results to a file, and `-f` to force-overwrite if the output file already exists:
 
 ```bash
 # From file
@@ -39,6 +39,9 @@ axle check file.lean --environment lean-4.28.0
 
 # From stdin
 cat file.lean | axle check - --environment lean-4.28.0
+
+# Write output to file
+axle normalize file.lean -o output.lean --environment lean-4.28.0
 ```
 
 ## Parameter Formats
@@ -53,7 +56,7 @@ cat file.lean | axle check - --environment lean-4.28.0
 |---|---|
 | `0` | Success |
 | `1` | Failure (general error) |
-| `2` | Invalid arguments (unrecognized flags, missing required args) |
+| `2` | File exists (use `-f` to overwrite) |
 | `3` | Validation failed (with `--strict` flag) |
 | `130` | User interrupt (Ctrl+C) |
 
@@ -105,6 +108,8 @@ axle rename file.lean \
   --declarations '{"old_name": "new_name"}' \
   --environment lean-4.28.0
 ```
+
+Declarations can also be provided via a JSON file: `--declarations-file mapping.json`
 
 Optional flags: `--ignore-imports`, `--timeout-seconds N`
 

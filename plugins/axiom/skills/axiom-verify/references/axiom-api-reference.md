@@ -28,12 +28,14 @@ These fields are only present on specific endpoints (not universal):
 
 | Field | Type | Present on | Description |
 |---|---|---|---|
-| `okay` | `boolean` | `check`, `verify_proof` | Compilation pass/fail -- `true` if code compiles without Lean errors |
-| `failed_declarations` | `list[string]` | `check`, `verify_proof` | Declaration names with verification-level failures |
+| `okay` | `boolean` | `check`, `verify_proof` | For `check`: `true` if code compiles. For `verify_proof`: `true` if proof is valid (compiles + passes verification) |
+| `failed_declarations` | `list[string]` | `check`, `verify_proof` | Declaration names with verification-level failures (empty when `okay` is `true` for `check`) |
 
-**`okay` semantics:** The `okay` field reflects **compilation success only**. Code that compiles but uses `sorry` will have `okay: true` with non-empty `failed_declarations`. To confirm a proof is fully valid, check both `okay: true` AND `failed_declarations: []`.
+**`okay` semantics (check):** For `check`, `okay` reflects **compilation success only**. Code that compiles (even with `sorry`) has `okay: true`. `failed_declarations` is empty when `okay` is `true`. The `check` endpoint does not detect sorry usage or other verification-level issues.
 
-**`failed_declarations` semantics:** This field only captures *verification-level* failures -- sorry usage, signature mismatches, disallowed axioms. It does NOT capture compilation errors (tactic failures, syntax errors, name collisions). When code fails to compile, `okay` is `false` but `failed_declarations` is empty; check `lean_messages.errors` for the actual errors.
+**`okay` semantics (verify_proof):** For `verify_proof`, `okay` reflects **proof validity** -- `true` only when code compiles AND passes all verification checks (no sorry, signatures match, no disallowed axioms). Sorry usage causes `okay: false` with the offending name in `failed_declarations`.
+
+**`failed_declarations` semantics:** This field captures *verification-level* failures -- sorry usage, signature mismatches, disallowed axioms. It does NOT capture compilation errors (tactic failures, syntax errors, name collisions). When code fails to compile, `okay` is `false` but `failed_declarations` is empty; check `lean_messages.errors` for the actual errors. For `check`, `failed_declarations` is always empty when `okay` is `true`.
 
 **Import mismatch errors:** If imports don't match the environment defaults and `ignore_imports` is not set, the API returns `{"user_error": "...", "info": {...}}` instead of the standard response format. Use `ignore_imports: true` to avoid this.
 
@@ -72,19 +74,19 @@ Validates a candidate Lean proof against a formal statement. Checks that `conten
 ### Response
 
 Returns standard fields plus:
-- `okay` (boolean): `true` if the proof is valid
+- `okay` (boolean): `true` if the candidate proof is valid and matches the formal statement (compilation success alone is not sufficient -- sorry usage, signature mismatches, and disallowed axioms all cause `okay: false`)
 
 ### Verification Error Patterns
 
 These are the specific error messages returned in `tool_messages.errors`:
 
 - `Missing required declaration '{name}'` -- Symbol absent from content
-- `Kind mismatch for '{name}'` -- Definition type mismatch (theorem vs def)
-- `Theorem '{name}' does not match expected signature` -- Type changed
-- `Definition '{name}' does not match expected signature` -- Value/type changed
+- `Kind mismatch for '{name}': candidate has {X} but expected {Y}` -- Definition type mismatch (theorem vs def)
+- `Theorem '{name}' does not match expected signature: expected {X}, got {Y}` -- Type changed
+- `Definition '{name}' does not match expected signature: expected {X}, got {Y}` -- Value/type changed
 - `Unsafe/partial function '{name}' detected` -- Disallowed function used
-- `Axiom '{axiom}' is not in the allowed set` -- Non-standard axiom used
-- `Declaration '{name}' uses 'sorry'` -- Unproven theorem (unless in `permitted_sorries`)
+- `In '{name}': Axiom '{axiom}' is not in the allowed set of standard axioms` -- Non-standard axiom used
+- `Declaration '{name}' uses 'sorry' which is not allowed in a valid proof` -- Unproven theorem (unless in `permitted_sorries`)
 - `Candidate uses banned 'open private' command` -- Disallowed syntax
 
 ### Example
@@ -121,7 +123,7 @@ Evaluates Lean code for compilation errors without formal verification. Quick sy
 ### Response
 
 Returns standard fields plus:
-- `okay` (boolean): `true` if code compiles without errors (warnings don't affect this)
+- `okay` (boolean): `true` if code compiles without errors (warnings like `sorry` don't affect this). `failed_declarations` is empty when `okay` is `true`.
 
 ---
 
@@ -146,6 +148,7 @@ Returns standard fields plus:
 - `documents` (dict): Maps theorem names to objects containing:
   - `declaration`: Raw theorem source code
   - `content`: Standalone compilable code block with all dependencies
+  - `tokens`: Source tokenized
   - `signature`: The theorem declaration (excluding proof)
   - `type`: Pretty-printed theorem type
   - `type_hash`: Hash for deduplication
@@ -156,6 +159,7 @@ Returns standard fields plus:
   - `tactic_counts`: Frequency of each tactic used
   - `local_type_dependencies` / `local_value_dependencies`: Dependencies within the file
   - `external_type_dependencies` / `external_value_dependencies`: Dependencies from imports
+  - `local_syntactic_dependencies` / `external_syntactic_dependencies`: Explicitly written dependency references
   - `document_messages` / `theorem_messages`: Per-theorem compilation messages
 
 ---
@@ -316,7 +320,7 @@ Attempts to automatically repair broken proofs. Particularly useful after Lean o
 
 - `remove_extraneous_tactics` -- Remove tactics after a proof is already complete
 - `apply_terminal_tactics` -- Replace `sorry` by applying terminal tactics to close goals
-- `replace_unsafe_tactics` -- Swap deprecated/unsafe tactics for safe alternatives (e.g., `native_decide` to `decide +kernel`)
+- `replace_unsafe_tactics` -- Swap deprecated/unsafe tactics for safe alternatives (e.g., `native_decide` to `decide`)
 
 ### Response
 
