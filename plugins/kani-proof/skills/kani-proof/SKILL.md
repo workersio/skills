@@ -42,7 +42,18 @@ Use the agent's output to write a harness. Select a pattern from the [pattern ta
 
 ### Step 3 — Verify and Iterate
 
-Run `cargo kani --harness proof_name` and diagnose failures using the [diagnosis table](#diagnosing-failures). See [references/kani-features.md](references/kani-features.md) for the full Kani API (contracts, stubbing, concrete playback, partitioned verification).
+After writing the proof, spawn a verifier agent following [references/agents/kani-verifier-agent.md](references/agents/kani-verifier-agent.md). It runs `cargo kani`, parses the output, and returns a structured diagnosis.
+
+If the verifier reports FAIL:
+- **unwinding assertion** → add `#[kani::unwind(N)]` with N from the error
+- **OOM** → reduce symbolic ranges, lower config params, remove Box
+- **assertion failed** → check the failing assertion, fix the proof logic
+- **timeout** → add `#[kani::solver(cadical)]`, narrow ranges
+- **covers UNSATISFIABLE** → assumptions are contradictory, loosen them
+
+Iterate: fix the proof based on the diagnosis, then re-run the verifier. Do not submit a proof that has not been verified.
+
+See [references/kani-features.md](references/kani-features.md) for the full Kani API (contracts, stubbing, concrete playback, partitioned verification).
 
 ## Kani-Specific Concepts
 
@@ -139,3 +150,4 @@ The Explore agent identifies what's needed. Common preparations:
 - [references/kani-features.md](references/kani-features.md) — Kani API: contracts, stubbing, concrete playback, partitioned verification
 - [references/invariant-design.md](references/invariant-design.md) — Layered invariant design methodology
 - [references/agents/kani-analyzer-agent.md](references/agents/kani-analyzer-agent.md) — Explore agent for pre-proof codebase analysis
+- [references/agents/kani-verifier-agent.md](references/agents/kani-verifier-agent.md) — Explore agent for post-proof verification and diagnosis
