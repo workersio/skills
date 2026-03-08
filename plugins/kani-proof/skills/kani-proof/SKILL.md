@@ -40,9 +40,23 @@ Before writing any proof, spawn an Explore agent following [references/agents/ka
 
 Use the agent's output to write a harness. Select a pattern from the [pattern table](#proof-patterns) and see [references/proof-patterns.md](references/proof-patterns.md) for templates.
 
-### Step 3 — Verify and Iterate
+### Step 3 — Lint
 
-After writing the proof, spawn a verifier agent following [references/agents/kani-verifier-agent.md](references/agents/kani-verifier-agent.md). It runs `cargo kani`, parses the output, and returns a structured diagnosis.
+After writing the proof, run the `kani-lint` static analyzer. The binary should already be on your `PATH`, so you can invoke it directly:
+
+```bash
+kani-lint <proof_file.rs> --format human
+```
+
+Fix all **errors** (contradictory assumes, dead assertions, concrete-only assumes).
+Fix **warnings** when possible (missing unwind, no symbolic input, over-constrained, large vectors).
+Address **suggestions** (add `kani::cover!()` for non-vacuity).
+
+Re-run kani-lint until no errors remain.
+
+### Step 4 — Verify and Iterate
+
+After linting passes, spawn a verifier agent following [references/agents/kani-verifier-agent.md](references/agents/kani-verifier-agent.md). It runs `cargo kani`, parses the output, and returns a structured diagnosis.
 
 If the verifier reports FAIL:
 - **unwinding assertion** → add `#[kani::unwind(N)]` with N from the error
@@ -51,7 +65,7 @@ If the verifier reports FAIL:
 - **timeout** → add `#[kani::solver(cadical)]`, narrow ranges
 - **covers UNSATISFIABLE** → assumptions are contradictory, loosen them
 
-Iterate: fix the proof based on the diagnosis, then re-run the verifier. Do not submit a proof that has not been verified.
+Iterate: fix → re-lint → re-verify until the proof passes. Do not submit a proof that has not been verified.
 
 See [references/kani-features.md](references/kani-features.md) for the full Kani API (contracts, stubbing, concrete playback, partitioned verification).
 
