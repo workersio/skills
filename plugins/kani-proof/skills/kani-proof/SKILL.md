@@ -11,7 +11,7 @@ Kani is a bounded model checker — it explores ALL possible values of symbolic 
 
 These rules prevent the most common proof failures. Violating any one will likely cause the proof to fail.
 
-1. **No `#[kani::unwind]` or `#[kani::solver]` on first attempt.** Omit both decorators entirely. Only add `#[kani::unwind(N)]` after getting an "unwinding assertion" error, and only add `#[kani::solver(cadical)]` after a timeout. Kani's defaults work better than guessing.
+1. **No `#[kani::unwind]` or `#[kani::solver]` on first attempt.** Omit both decorators entirely. Only add `#[kani::unwind(N)]` after getting an "unwinding assertion" error, and only add `#[kani::solver(kissat)]` after a timeout. Kani's defaults work better than guessing.
 
 2. **Assert the target property inline, not via helper methods.** Do not call methods that check multiple invariants or iterate over collections — they introduce loops, extra assertions, and unrelated failure points. Read the struct fields directly and write the comparison yourself:
    ```rust
@@ -48,7 +48,7 @@ If the verifier reports FAIL:
 - **unwinding assertion** → add `#[kani::unwind(N)]` with N from the error
 - **OOM** → reduce symbolic ranges, lower config params, remove Box
 - **assertion failed** → check the failing assertion, fix the proof logic
-- **timeout** → add `#[kani::solver(cadical)]`, narrow ranges
+- **timeout** → try `#[kani::solver(kissat)]`, narrow ranges
 - **covers UNSATISFIABLE** → assumptions are contradictory, loosen them
 
 Iterate: fix the proof based on the diagnosis, then re-run the verifier. Do not submit a proof that has not been verified.
@@ -89,7 +89,7 @@ Only relevant if you get an "unwinding assertion" error. Add `#[kani::unwind(N)]
 | Kani Output | Fix |
 |-------------|-----|
 | `unwinding assertion` | Add `#[kani::unwind(N)]` with N = loop_count + 1 |
-| Timeout / solver hang | Add `kani::assume()` to narrow ranges, try `#[kani::solver(cadical)]` |
+| Timeout / solver hang | Add `kani::assume()` to narrow ranges, try `#[kani::solver(kissat)]` |
 | `VERIFICATION:- FAILED` | Use `cargo kani -Z concrete-playback --concrete-playback=print --harness name` |
 | OOM / out of memory | Reduce state size, remove Box, fewer symbolic variables |
 | `assume(false)` on all paths | Remove `kani::assume()` constraints — they're contradictory |
@@ -149,5 +149,6 @@ The Explore agent identifies what's needed. Common preparations:
 - [references/proof-patterns.md](references/proof-patterns.md) — Pattern catalog with templates and examples
 - [references/kani-features.md](references/kani-features.md) — Kani API: contracts, stubbing, concrete playback, partitioned verification
 - [references/invariant-design.md](references/invariant-design.md) — Layered invariant design methodology
+- [references/anchor-verification.md](references/anchor-verification.md) — Anchor program verification with OtterSec annotations
 - [references/agents/kani-analyzer-agent.md](references/agents/kani-analyzer-agent.md) — Explore agent for pre-proof codebase analysis
 - [references/agents/kani-verifier-agent.md](references/agents/kani-verifier-agent.md) — Explore agent for post-proof verification and diagnosis

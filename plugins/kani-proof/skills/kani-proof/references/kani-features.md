@@ -133,23 +133,19 @@ pub struct U128([u64; 2]);
 Add Kani metadata to your `Cargo.toml` (or workspace root for workspaces):
 
 ```toml
-[workspace.metadata.kani]
-flags = { tests = true }
-unstable = { stubbing = true }
-
-[[workspace.metadata.kani.proof]]
-harness = ".*"
-unwind = 70
+[workspace.metadata.kani.flags]
+tests = true
+default-unwind = "10"
 ```
 
 | Field | Purpose |
 |---|---|
-| `flags.tests = true` | Enables `#[cfg(test)]` modules during Kani verification |
-| `unstable.stubbing = true` | Required for `#[kani::stub()]` attribute |
-| `harness = ".*"` | Match all proof harnesses |
-| `unwind = 70` | Default loop unwind bound; individual harnesses override with `#[kani::unwind(N)]` |
+| `tests = true` | Enables `#[cfg(test)]` modules during Kani verification |
+| `default-unwind = "10"` | Default loop unwind bound; individual harnesses override with `#[kani::unwind(N)]` |
 
-**Choosing the unwind bound:** Set it to `MAX_ACCOUNTS` (after Kani reduction) + margin. For `MAX_ACCOUNTS = 4`, `unwind = 10` is usually sufficient. For `MAX_ACCOUNTS = 64` (without reduction), you'd need `unwind = 70+`, which is much slower.
+> **Note:** Unstable features (such as stubbing or function contracts) are enabled via `-Z` flags on the command line (e.g., `cargo kani -Z stubbing`), not through Cargo.toml metadata.
+
+**Choosing the unwind bound:** Set `default-unwind` to `MAX_ACCOUNTS` (after Kani reduction) + margin. For `MAX_ACCOUNTS = 4`, `default-unwind = "10"` is usually sufficient. Without state-space reduction (e.g., `MAX_ACCOUNTS = 64`), you would need a much higher bound, which is significantly slower.
 
 ### no_std Setup
 
@@ -175,7 +171,7 @@ extern crate kani;
 
 ## Function Contracts
 
-> **Note:** Function contracts are EXPERIMENTAL. You must pass `-Z function-contracts` to `cargo kani` or add `unstable = { function-contracts = true }` to `[workspace.metadata.kani]` in Cargo.toml.
+> **Note:** Function contracts are EXPERIMENTAL. You must pass `-Z function-contracts` to `cargo kani`.
 
 Function contracts enable **modular verification** — verify each function independently, then compose them. This is critical for complex programs where verifying everything at once causes solver explosion.
 
@@ -538,9 +534,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: model-checking/kani-github-action@v0.17
-        with:
-          args: --solver cadical
+      - uses: model-checking/kani-github-action@v1
 ```
 
 ### Best Practices
@@ -574,7 +568,17 @@ fn verify_buffer_scan() {
 
 ## Arbitrary Trait for Custom Types
 
-Implement `kani::Arbitrary` to generate fully symbolic instances of your types:
+For types where all fields implement `Arbitrary`, use the derive macro:
+
+```rust
+#[cfg_attr(kani, derive(kani::Arbitrary))]
+struct MyStruct {
+    field_a: u64,
+    field_b: bool,
+}
+```
+
+For types that need custom symbolic generation, implement the trait manually:
 
 ```rust
 #[cfg(kani)]

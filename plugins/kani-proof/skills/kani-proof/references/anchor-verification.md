@@ -228,7 +228,7 @@ impl<T: kani::Arbitrary> kani::Arbitrary for ConcreteContext<T> {
             program_id: kani::any(),
             accounts: kani::any(),
             remaining_accounts: Vec::from([]),
-            ..
+            // ... other fields omitted
         }
     }
 }
