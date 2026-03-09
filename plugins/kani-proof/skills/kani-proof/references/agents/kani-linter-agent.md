@@ -18,16 +18,24 @@ You are a Kani proof linting agent. Run the kani-lint static analyzer on a proof
 
 ### 1. Run the Linter
 
-Run `kani-lint` on the proof file using the Bash tool:
+Run `klint` on the proof file using the Bash tool. The linter is distributed as `@workersio/klint`.
 
+**Install** (if not already installed):
 ```
-kani-lint -f human [FILE_PATH]
+npm install @workersio/klint
 ```
 
-If `kani-lint` is not in PATH, try:
+**Run with human-readable output:**
 ```
-~/.cargo/bin/kani-lint -f human [FILE_PATH]
+klint --format human [FILE_PATH]
 ```
+
+If `klint` is not in PATH (not yet installed), use:
+```
+npx -p @workersio/klint klint --format human [FILE_PATH]
+```
+
+> **Note:** `npx @workersio/klint` does not work due to a known npm quirk with scoped packages. Use `npx -p @workersio/klint klint` instead.
 
 ### 2. Parse Output
 
@@ -47,13 +55,19 @@ Each diagnostic includes:
 
 ### 3. Also Run JSON Output for Structured Data
 
-Run a second pass with JSON output for precise counts:
+Run a second pass with JSON output (the default format) for precise counts:
 
 ```
-kani-lint -f json [FILE_PATH]
+klint --format json [FILE_PATH]
 ```
 
 Extract the `summary` object for error/warning/suggestion counts and `harnesses_analyzed` count.
+
+**Exit codes:**
+- `1` — errors found
+- `0` — no errors (warnings/suggestions only, or clean)
+
+**Error handling:** Missing or unreadable files are reported cleanly without crashing.
 
 ### 4. Return Diagnosis
 
@@ -136,6 +150,15 @@ The linter checks for these categories of issues:
 | `missing_assertion` | Has symbolic inputs but no assertions |
 | `trivial_assume` | `kani::assume(true)` — no-op |
 | `assume_after_assert` | Assumes after assertions — wrong ordering |
+
+## Package Details
+
+- **Package**: `@workersio/klint@0.1.1`
+- **Install**: `npm install @workersio/klint`
+- **Run**: `klint [FILE]` (after install), or `npx -p @workersio/klint klint [FILE]` without installing
+- **Formats**: `--format human` (readable diagnostics) or `--format json` (structured, default)
+- **Exit codes**: `1` on errors, `0` otherwise
+- **Platform**: Resolves the correct platform-specific binary automatically
 
 ## Usage
 
