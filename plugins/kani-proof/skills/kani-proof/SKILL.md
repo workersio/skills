@@ -40,9 +40,19 @@ Before writing any proof, spawn an Explore agent following [references/agents/ka
 
 Use the agent's output to write a harness. Select a pattern from the [pattern table](#proof-patterns) and see [references/proof-patterns.md](references/proof-patterns.md) for templates.
 
-### Step 3 — Verify and Iterate
+### Step 3 — Lint the Proof
 
-After writing the proof, spawn a verifier agent following [references/agents/kani-verifier-agent.md](references/agents/kani-verifier-agent.md). It runs `cargo kani`, parses the output, and returns a structured diagnosis.
+After writing the proof and **before** running `cargo kani`, spawn a linter agent following [references/agents/kani-linter-agent.md](references/agents/kani-linter-agent.md). The linter statically detects 23 common anti-patterns (contradictory assumes, missing unwind, vacuity risks, over-constrained inputs, etc.) in seconds — far faster than the minutes-long `cargo kani` run.
+
+- **Errors** → must fix before proceeding to verification (contradictory assumes, dead assertions, harness params)
+- **Warnings** → should fix to avoid hangs/OOM/vacuity (missing unwind, no symbolic input, large state space)
+- **Suggestions** → consider for proof quality (missing cover, assume ordering)
+
+Fix all errors and address warnings, then re-run the linter until clean before proceeding to Step 4.
+
+### Step 4 — Verify and Iterate
+
+After the linter is clean, spawn a verifier agent following [references/agents/kani-verifier-agent.md](references/agents/kani-verifier-agent.md). It runs `cargo kani`, parses the output, and returns a structured diagnosis.
 
 If the verifier reports FAIL:
 - **unwinding assertion** → add `#[kani::unwind(N)]` with N from the error
@@ -51,7 +61,7 @@ If the verifier reports FAIL:
 - **timeout** → try `#[kani::solver(kissat)]`, narrow ranges
 - **covers UNSATISFIABLE** → assumptions are contradictory, loosen them
 
-Iterate: fix the proof based on the diagnosis, then re-run the verifier. Do not submit a proof that has not been verified.
+Iterate: fix the proof based on the diagnosis, re-run the linter, then re-run the verifier. Do not submit a proof that has not been verified.
 
 See [references/kani-features.md](references/kani-features.md) for the full Kani API (contracts, stubbing, concrete playback, partitioned verification).
 
@@ -151,4 +161,5 @@ The Explore agent identifies what's needed. Common preparations:
 - [references/invariant-design.md](references/invariant-design.md) — Layered invariant design methodology
 - [references/anchor-verification.md](references/anchor-verification.md) — Anchor program verification with OtterSec annotations
 - [references/agents/kani-analyzer-agent.md](references/agents/kani-analyzer-agent.md) — Explore agent for pre-proof codebase analysis
+- [references/agents/kani-linter-agent.md](references/agents/kani-linter-agent.md) — Explore agent for static lint checks (run before verification)
 - [references/agents/kani-verifier-agent.md](references/agents/kani-verifier-agent.md) — Explore agent for post-proof verification and diagnosis
