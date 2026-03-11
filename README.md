@@ -22,6 +22,10 @@ Structured Solana smart contract security audits across 25 vulnerability types. 
 
 Verify, check, transform, and repair Lean 4 proofs using the Axiom (Axle) API and CLI.
 
+### skill-benchmark
+
+Benchmark any agent skill to measure whether it actually improves performance. Runs isolated eval sessions with and without the skill, grades outputs via layered grading (deterministic checks + LLM-as-judge), analyzes behavioral signals, and generates a comparison report with a USE / DON'T USE verdict.
+
 ---
 
 ## Install
@@ -52,6 +56,12 @@ plugins/
   axiom/                           # Lean 4 proof verification via Axiom
     .claude-plugin/plugin.json
     skills/axiom/SKILL.md
+  skill-benchmark/                   # Benchmark any agent skill
+    .claude-plugin/plugin.json
+    skills/skill-benchmark/SKILL.md
+    skills/skill-benchmark/scripts/
+    skills/skill-benchmark/agents/
+    skills/skill-benchmark/references/
 ```
 
 Each plugin lives under `plugins/` with its own `.claude-plugin/plugin.json` manifest and `skills/` directory. The root `.claude-plugin/marketplace.json` catalogs all plugins for marketplace discovery.

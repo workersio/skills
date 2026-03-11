@@ -24,6 +24,11 @@
       "name": "axiom",
       "source": "./plugins/axiom",
       "description": "Verify, check, transform, and repair Lean 4 proofs using the Axiom (Axle) API and CLI"
+    },
+    {
+      "name": "skill-benchmark",
+      "source": "./plugins/skill-benchmark",
+      "description": "Benchmark any agent skill to measure whether it actually improves performance"
     }
   ]
 }

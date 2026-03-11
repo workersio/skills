@@ -40,6 +40,16 @@ Verify, check, transform, and repair Lean 4 proofs using the Axiom (Axle) API an
 - **Skill**: `skills/axiom-verify/SKILL.md` (`/axiom`)
 - **Manifest**: `plugins/axiom/.claude-plugin/plugin.json`
 
+### skill-benchmark (`plugins/skill-benchmark/`)
+
+Benchmark any agent skill to measure whether it actually improves performance. Runs eval sessions with and without the skill, grades via layered grading (deterministic checks + LLM-as-judge), and generates a comparison report.
+
+- **Skill**: `skills/skill-benchmark/SKILL.md` (`/skill-benchmark`)
+- **Manifest**: `plugins/skill-benchmark/.claude-plugin/plugin.json`
+- **Scripts**: `skills/skill-benchmark/scripts/` (parse_stream.py, analyze_transcript.py, run_checks.py)
+- **Agents**: `skills/skill-benchmark/agents/` (runner.md, grader.md, reporter.md)
+- **References**: `skills/skill-benchmark/references/` (CONFIG.md, DIRECTORY-STRUCTURE.md)
+
 ## Architecture
 
 ```

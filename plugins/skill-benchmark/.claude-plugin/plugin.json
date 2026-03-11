@@ -1,0 +1,10 @@
+{
+  "name": "skill-benchmark",
+  "version": "1.0.0",
+  "description": "Benchmark any agent skill to measure whether it actually improves performance",
+  "author": {
+    "name": "workers.io"
+  },
+  "repository": "https://github.com/workersio/spec",
+  "license": "MIT"
+}
