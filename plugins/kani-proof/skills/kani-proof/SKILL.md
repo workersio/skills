@@ -11,7 +11,7 @@ Kani is a bounded model checker — it explores ALL possible values of symbolic 
 
 These rules prevent the most common proof failures. Violating any one will likely cause the proof to fail.
 
-1. **No `#[kani::unwind]` or `#[kani::solver]` on first attempt.** Omit both decorators entirely. Only add `#[kani::unwind(N)]` after getting an "unwinding assertion" error, and only add `#[kani::solver(cadical)]` after a timeout. Kani's defaults work better than guessing.
+1. **No `#[kani::unwind]` or `#[kani::solver]` on first attempt.** Omit both decorators entirely. Only add `#[kani::unwind(N)]` after getting an "unwinding assertion" error, and only add `#[kani::solver(kissat)]` after a timeout. Kani's defaults work better than guessing.
 
 2. **Assert the target property inline, not via helper methods.** Do not call methods that check multiple invariants or iterate over collections — they introduce loops, extra assertions, and unrelated failure points. Read the struct fields directly and write the comparison yourself:
    ```rust
@@ -40,32 +40,28 @@ Before writing any proof, spawn an Explore agent following [references/agents/ka
 
 Use the agent's output to write a harness. Select a pattern from the [pattern table](#proof-patterns) and see [references/proof-patterns.md](references/proof-patterns.md) for templates.
 
-### Step 3 — Lint
+### Step 3 — Lint the Proof
 
-After writing the proof, run the `kani-lint` static analyzer. The binary should already be on your `PATH`, so you can invoke it directly:
+After writing the proof and **before** running `cargo kani`, spawn a linter agent following [references/agents/kani-linter-agent.md](references/agents/kani-linter-agent.md). The linter statically detects 23 common anti-patterns (contradictory assumes, missing unwind, vacuity risks, over-constrained inputs, etc.) in seconds — far faster than the minutes-long `cargo kani` run.
 
-```bash
-kani-lint <proof_file.rs> --format human
-```
+- **Errors** → must fix before proceeding to verification (contradictory assumes, dead assertions, harness params)
+- **Warnings** → should fix to avoid hangs/OOM/vacuity (missing unwind, no symbolic input, large state space)
+- **Suggestions** → consider for proof quality (missing cover, assume ordering)
 
-Fix all **errors** (contradictory assumes, dead assertions, concrete-only assumes).
-Fix **warnings** when possible (missing unwind, no symbolic input, over-constrained, large vectors).
-Address **suggestions** (add `kani::cover!()` for non-vacuity).
-
-Re-run kani-lint until no errors remain.
+Fix all errors and address warnings, then re-run the linter until clean before proceeding to Step 4.
 
 ### Step 4 — Verify and Iterate
 
-After linting passes, spawn a verifier agent following [references/agents/kani-verifier-agent.md](references/agents/kani-verifier-agent.md). It runs `cargo kani`, parses the output, and returns a structured diagnosis.
+After the linter is clean, spawn a verifier agent following [references/agents/kani-verifier-agent.md](references/agents/kani-verifier-agent.md). It runs `cargo kani`, parses the output, and returns a structured diagnosis.
 
 If the verifier reports FAIL:
 - **unwinding assertion** → add `#[kani::unwind(N)]` with N from the error
 - **OOM** → reduce symbolic ranges, lower config params, remove Box
 - **assertion failed** → check the failing assertion, fix the proof logic
-- **timeout** → add `#[kani::solver(cadical)]`, narrow ranges
+- **timeout** → try `#[kani::solver(kissat)]`, narrow ranges
 - **covers UNSATISFIABLE** → assumptions are contradictory, loosen them
 
-Iterate: fix → re-lint → re-verify until the proof passes. Do not submit a proof that has not been verified.
+Iterate: fix the proof based on the diagnosis, re-run the linter, then re-run the verifier. Do not submit a proof that has not been verified.
 
 See [references/kani-features.md](references/kani-features.md) for the full Kani API (contracts, stubbing, concrete playback, partitioned verification).
 
@@ -103,7 +99,7 @@ Only relevant if you get an "unwinding assertion" error. Add `#[kani::unwind(N)]
 | Kani Output | Fix |
 |-------------|-----|
 | `unwinding assertion` | Add `#[kani::unwind(N)]` with N = loop_count + 1 |
-| Timeout / solver hang | Add `kani::assume()` to narrow ranges, try `#[kani::solver(cadical)]` |
+| Timeout / solver hang | Add `kani::assume()` to narrow ranges, try `#[kani::solver(kissat)]` |
 | `VERIFICATION:- FAILED` | Use `cargo kani -Z concrete-playback --concrete-playback=print --harness name` |
 | OOM / out of memory | Reduce state size, remove Box, fewer symbolic variables |
 | `assume(false)` on all paths | Remove `kani::assume()` constraints — they're contradictory |
@@ -163,5 +159,7 @@ The Explore agent identifies what's needed. Common preparations:
 - [references/proof-patterns.md](references/proof-patterns.md) — Pattern catalog with templates and examples
 - [references/kani-features.md](references/kani-features.md) — Kani API: contracts, stubbing, concrete playback, partitioned verification
 - [references/invariant-design.md](references/invariant-design.md) — Layered invariant design methodology
+- [references/anchor-verification.md](references/anchor-verification.md) — Anchor program verification with OtterSec annotations
 - [references/agents/kani-analyzer-agent.md](references/agents/kani-analyzer-agent.md) — Explore agent for pre-proof codebase analysis
+- [references/agents/kani-linter-agent.md](references/agents/kani-linter-agent.md) — Explore agent for static lint checks (run before verification)
 - [references/agents/kani-verifier-agent.md](references/agents/kani-verifier-agent.md) — Explore agent for post-proof verification and diagnosis

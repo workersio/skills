@@ -160,8 +160,8 @@ Write proofs from cheapest to most expensive:
 
 ```rust
 #[kani::proof]
-#[kani::unwind(N)]  // from loop analysis
-#[kani::solver(cadical)]
+// #[kani::unwind(N)]  — add only after unwinding assertion error
+// #[kani::solver(kissat)]  — add only after timeout with default solver
 fn operation_preserves_conservation() {
     let mut state = create_populated_state();
     kani::assume(invariant(&state));
@@ -195,8 +195,8 @@ fn operation_preserves_conservation() {
 
 ```rust
 #[kani::proof]
-#[kani::unwind(N)]
-#[kani::solver(cadical)]
+// #[kani::unwind(N)]  — add only after unwinding assertion error
+// #[kani::solver(kissat)]  — add only after timeout with default solver
 fn operation_conservation_regardless() {
     let mut state = create_populated_state();
     kani::assume(invariant(&state));
@@ -223,8 +223,8 @@ Use Template A for most proofs — it catches more bugs by forcing the Ok path a
 
 ```rust
 #[kani::proof]
-#[kani::unwind(N)]
-#[kani::solver(cadical)]
+// #[kani::unwind(N)]  — add only after unwinding assertion error
+// #[kani::solver(kissat)]  — add only after timeout with default solver
 fn operation_only_mutates_target() {
     let mut state = create_populated_state();
 
@@ -262,8 +262,8 @@ fn operation_only_mutates_target() {
 
 ```rust
 #[kani::proof]
-#[kani::unwind(N)]
-#[kani::solver(cadical)]
+// #[kani::unwind(N)]  — add only after unwinding assertion error
+// #[kani::solver(kissat)]  — add only after timeout with default solver
 fn operation_preserves_inv() {
     let mut state = create_populated_state();
     kani::assert(invariant(&state), "INV before");
@@ -290,8 +290,8 @@ Write one per mutation function. This is the highest-value pattern because the i
 
 ```rust
 #[kani::proof]
-#[kani::unwind(N)]
-#[kani::solver(cadical)]
+// #[kani::unwind(N)]  — add only after unwinding assertion error
+// #[kani::solver(kissat)]  — add only after timeout with default solver
 fn operation_rejects_invalid_input() {
     let mut state = create_populated_state();
     kani::assume(invariant(&state));
@@ -335,8 +335,8 @@ fn operation_rejects_invalid_input() {
 
 ```rust
 #[kani::proof]
-#[kani::unwind(N)]
-#[kani::solver(cadical)]
+// #[kani::unwind(N)]  — add only after unwinding assertion error
+// #[kani::solver(kissat)]  — add only after timeout with default solver
 fn counter_only_increases() {
     let mut state = create_populated_state();
     let counter_before = state.counter;
@@ -361,8 +361,8 @@ fn counter_only_increases() {
 
 ```rust
 #[kani::proof]
-#[kani::unwind(N)]
-#[kani::solver(cadical)]
+// #[kani::unwind(N)]  — add only after unwinding assertion error
+// #[kani::solver(kissat)]  — add only after timeout with default solver
 fn settlement_is_idempotent() {
     let mut state = create_populated_state();
 
@@ -389,7 +389,7 @@ fn settlement_is_idempotent() {
 
 ```rust
 #[kani::proof]
-#[kani::solver(cadical)]
+// #[kani::solver(kissat)]  — add only after timeout with default solver
 fn arithmetic_no_overflow() {
     let a: u64 = kani::any();
     let b: u64 = kani::any();
@@ -435,8 +435,8 @@ fn arithmetic_near_max() {
 
 ```rust
 #[kani::proof]
-#[kani::unwind(N)]
-#[kani::solver(cadical)]
+// #[kani::unwind(N)]  — add only after unwinding assertion error
+// #[kani::solver(kissat)]  — add only after timeout with default solver
 fn unauthorized_caller_rejected() {
     let mut state = create_populated_state();
     kani::assert(invariant(&state), "INV before");
@@ -456,8 +456,8 @@ fn unauthorized_caller_rejected() {
 
 ```rust
 #[kani::proof]
-#[kani::unwind(N)]
-#[kani::solver(cadical)]
+// #[kani::unwind(N)]  — add only after unwinding assertion error
+// #[kani::solver(kissat)]  — add only after timeout with default solver
 fn only_valid_transitions() {
     let mut state = create_populated_state();
     let status_before = state.status;
@@ -516,7 +516,7 @@ Only works for small structs (<100 bytes, no arrays) where `impl kani::Arbitrary
 
 ```rust
 #[kani::proof]
-#[kani::unwind(1)]
+#[kani::unwind(1)]  // No loops: prevents unnecessary unwinding attempts
 fn inductive_small_struct() {
     let mut state: SmallConfig = kani::any();
     kani::assume(state.is_valid());
@@ -557,8 +557,8 @@ Fast and targeted. Use to guard against specific known failure modes.
 
 ```rust
 #[kani::proof]
-#[kani::unwind(N)]
-#[kani::solver(cadical)]
+// #[kani::unwind(N)]  — add only after unwinding assertion error
+// #[kani::solver(kissat)]  — add only after timeout with default solver
 fn lifecycle_deposit_trade_withdraw() {
     let mut state = create_populated_state();
 

@@ -4,7 +4,7 @@ Use the Agent tool with `subagent_type: "Explore"` and the following prompt to v
 
 ## Agent Prompt
 
-```
+````
 You are a Kani proof verification agent. Run the proof, parse the results, and return a structured diagnosis.
 
 ## Input
@@ -77,7 +77,7 @@ Return exactly this structure:
   - FAILED (vacuous): "All kani::cover!() checks are UNSATISFIABLE — the proof is vacuous. Remove or loosen kani::assume() constraints."
   - PASS: "Verification successful. [Vacuity assessment]."
 ```
-```
+````
 
 ## Usage
 

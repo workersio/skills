@@ -4,7 +4,7 @@ Use the Agent tool with `subagent_type: "Explore"` and the following prompt to a
 
 ## Agent Prompt
 
-```
+````
 You are a codebase analysis agent preparing information for Kani formal verification proofs. Analyze the target codebase and return a structured summary.
 
 ## Target
@@ -112,7 +112,7 @@ Return this structured summary:
 ### Recommendations
 - [Any specific advice for this codebase]
 ```
-```
+````
 
 ## Usage
 
