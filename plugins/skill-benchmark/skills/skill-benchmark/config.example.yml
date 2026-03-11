@@ -1,0 +1,45 @@
+# Skill Benchmark Configuration
+#
+# Two ways to use:
+#
+# Option 1: Custom config
+#   cp config.example.yml config.yml
+#   Edit config.yml with your settings
+#   Run: /skill-benchmark
+#   (auto-detects config.yml in the same directory)
+#
+# Option 2: Default run (no config file needed)
+#   Just run: /skill-benchmark
+#   Uses the defaults below, asks you interactively for skill name
+
+# Models — use aliases (sonnet, opus, haiku) or full model IDs
+runner_model: sonnet        # Model that executes the benchmark tasks
+judge_model: opus           # Model that grades outputs (LLM-as-judge)
+
+# Skill to benchmark (optional — if set, skips the interactive prompt)
+# skill: code-commenter
+
+# Task generation
+task_count: 5               # Positive tasks to generate
+negative_controls: 1        # Out-of-domain tasks to catch false positives
+difficulties:
+  easy: 2
+  medium: 2
+  hard: 1
+
+# Runs — run each task N times to account for non-determinism
+# Set to 3+ if you want pass@k / pass^k metrics
+runs: 1
+
+# Grading weights (must sum to 100)
+weights:
+  correctness: 40
+  completeness: 25
+  quality: 20
+  efficiency: 15
+
+# Execution
+max_turns: 10               # Max agentic turns per session
+
+# Output
+results_dir: ./skill-bench/results
