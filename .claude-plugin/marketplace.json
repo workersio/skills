@@ -2,7 +2,7 @@
   "name": "workersio",
   "owner": {
     "name": "workersio",
-    "url": "https://workers.io"
+    "email": "chai+spec@workers.io"
   },
   "plugins": [
     {

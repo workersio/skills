@@ -1,3 +1,5 @@
+> **Compatibility:** The `onchor` fork is pinned to Anchor ~0.26. If your project uses Anchor >= 0.28, this annotation-driven approach may require significant adaptation. Consider hand-written harnesses (proof-patterns.md) instead for newer Anchor versions.
+
 # Anchor Program Verification with OtterSec
 
 [OtterSec's solana-verify](https://github.com/otter-sec/solana-verify) provides annotation-driven Kani verification for Anchor programs. Instead of hand-writing proof harnesses, you annotate your existing code and harnesses are auto-generated.
@@ -267,6 +269,8 @@ These are called in every generated harness to ensure account invariants hold be
 4. **Instruction-level only** — proves properties of individual instructions, not cross-instruction properties like "total supply is conserved across any sequence of instructions."
 
 5. **Path explosion** — complex instructions with many branching account validations can cause Kani to time out. Use `#[kani::unwind()]` bounds carefully.
+
+6. **Version pinning** — onchor is pinned to Anchor ~0.26. The gap with current Anchor (0.31+) grows with each release.
 
 ---
 

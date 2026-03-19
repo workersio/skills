@@ -1,0 +1,11 @@
+{
+  "scope": {
+    "programs": ["all"],
+    "exclude": []
+  },
+  "depth": "standard",
+  "known_constraints": {
+    "admin_is_multisig": false,
+    "accepted_risks": []
+  }
+}

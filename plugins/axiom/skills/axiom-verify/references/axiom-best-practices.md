@@ -6,22 +6,39 @@ Every response includes two distinct message types:
 
 **Lean Messages** (`lean_messages`): Direct output from the Lean compiler. Errors here indicate problems with the Lean code itself -- type mismatches, tactic failures, unknown identifiers, etc. These are the same messages you'd see running `lean` locally.
 
-**Tool Messages** (`tool_messages`): Axle-specific diagnostics. Errors here indicate the tool itself had issues processing the request -- import mismatches, unsupported constructs, internal timeouts, etc.
+**Tool Messages** (`tool_messages`): Axle-specific diagnostics. Errors here indicate the tool itself had issues processing the request -- import mismatches, unsupported constructs, internal timeouts, etc. The `tool_messages.infos` field often contains **unsolved goals** when a proof fails -- always check this for debugging context.
 
 **Severity levels:**
 - **Errors**: Result may be unusable
 - **Warnings**: Suspicious but non-fatal
-- **Infos**: Timing/debug output
+- **Infos**: Timing/debug output, unsolved goals
 
-Check both when debugging failures. A `tool_messages` error about imports is different from a `lean_messages` error about a tactic failure -- they have different fixes.
+Check both when debugging failures. A `tool_messages` error about imports is different from a `lean_messages.errors` error about a tactic failure -- they have different fixes.
 
-## Checking Results
+## Checking Results by Endpoint
 
-**For transformation tools** (normalize, rename, simplify, repair, etc.): Inspect `lean_messages.errors` first. Rule of thumb: if the input compiles, the output should compile.
+### `check`
 
-**For `check`:** `okay: true` means the code compiles without errors. `failed_declarations` is empty when `okay` is `true`. The `check` endpoint does not detect sorry usage -- it only validates compilation. Use `verify_proof` to confirm proofs are complete.
+Returns `okay` (boolean) and `failed_declarations` (list). The `okay` flag reflects **compilation success only** -- `true` if the code compiles without errors (warnings like `sorry` don't affect it). `failed_declarations` is empty when `okay` is `true`. The `check` endpoint does **not** detect sorry usage or other verification-level issues -- it only checks that code compiles. Use `verify_proof` to validate that proofs are complete.
 
-**For `verify_proof`:** `okay: true` means the proof is valid -- code compiles AND passes all verification checks (no sorry, signatures match, no disallowed axioms). Sorry usage causes `okay: false` with the offending name in `failed_declarations`. A fully valid proof has `okay: true` and `failed_declarations: []`.
+### `verify_proof`
+
+Returns `okay` (boolean) and `failed_declarations` (list). The `okay` flag reflects **proof validity** -- `true` only if the code compiles **and** passes all verification checks (no sorry, signatures match, no disallowed axioms). Note the distinction:
+- **Compilation errors** (tactic failures, syntax errors, name collisions): `okay` is `false`, `failed_declarations` is empty. The errors appear in `lean_messages.errors`.
+- **Verification failures** (sorry usage, signature mismatch, disallowed axioms): `okay` is `false`, and the offending names appear in `failed_declarations` with details in `tool_messages.errors`.
+- **Fully valid proof**: `okay` is `true` and `failed_declarations` is empty. This is the only state that means the proof is both compilable and complete.
+
+### Transformation tools (`repair_proofs`, `simplify_theorems`, `normalize`, etc.)
+
+These do not return `okay` or `failed_declarations`. Check that `lean_messages.errors` is empty and inspect the `content` field for the transformed result. Transformation tools can "succeed" (return content with zero `tool_messages` errors) while the underlying code has compilation errors visible only in `lean_messages.errors`.
+
+### `disprove`
+
+Check `disproved_theorems` (list of refuted names) and `results` (dict mapping each theorem name to a human-readable outcome string). If a counterexample is found, the name appears in `disproved_theorems` and the `results` entry contains the counterexample. If disprove fails (the theorem may be true), `disproved_theorems` is empty and the `results` entry describes why the negation could not be proven.
+
+### `user_error` responses
+
+Several error conditions return `{"user_error": "...", "info": {...}}` instead of the standard response format. This includes import mismatches (when `ignore_imports` is false), unrecognized declaration names in `rename`, and other request-level validation failures. Always check for a `user_error` field before parsing `lean_messages`/`tool_messages`.
 
 ## Import Handling
 
@@ -30,22 +47,50 @@ All requests assume the Lean code's imports match the environment's default head
 - **Default behavior**: Axle raises an error about mismatched imports
 - **With `ignore_imports: true`**: Axle auto-replaces the file's imports with the environment defaults
 
+**Always use `--ignore-imports` (CLI) or `"ignore_imports": true` (API)** unless you have a specific reason not to (e.g., testing that exact imports are correct). Without this flag, import mismatches return a `user_error` string instead of the standard response format, which breaks JSON parsing and hides the actual verification result. Code snippets, code from different Lean/Mathlib versions, and proof-logic checks all require this flag.
+
 Use `ignore_imports: true` when:
 - Working with code snippets that don't have import statements
 - Code was written for a different Lean/Mathlib version
 - You're getting import-related errors and just want to check the proof logic
 
+## Pre-submission Checklist
+
+Before sending code to any Axle endpoint, verify:
+
+1. **Strip custom attributes**: `sed 's/@\[category [^]]*\]//' file.lean` removes `@[category ...]` blocks. Also strip other project-specific attributes that won't resolve under standard Mathlib imports.
+2. **Strip project-specific constructs**: Replace `answer(sorry)` with `True` or remove entirely. Remove any helper macros/notation defined in project-specific imports.
+3. **Declare all type variables explicitly**: `variable {α : Type*}` or `(α : Type*)`. The Mathlib environment sets `autoImplicit := false` -- implicit variables like `List α` without declaring `α` will fail.
+4. **Rename theorems that shadow Mathlib names**: Names like `add_zero`, `add_comm`, `mul_comm` conflict with existing Mathlib declarations. Use `rename` to give unique names, or prefix with a custom namespace.
+5. **Run `normalize` first if the file uses `section`/`namespace`**: Other tools (`extract_theorems`, `theorem2sorry`, etc.) may produce non-compilable output when sections/namespaces are present because extracted names won't be fully qualified.
+6. **Always use `--ignore-imports`**: Unless you're specifically testing that exact imports are correct.
+
 ## Common Pitfalls
 
-**Mathlib `autoImplicit` is off.** The standard Mathlib environments set `autoImplicit := false`. Always declare type variables explicitly (e.g., `variable {α : Type*}` before using `List α`). Implicit variables that work in standalone Lean will fail in Mathlib environments.
+**Custom project attributes and constructs.** Files from Lean projects often define custom attributes (e.g., `@[category research open, AMS 11]`) and helper constructs (e.g., `answer(sorry)`) via project-specific imports. When `ignore_imports: true` replaces those imports with standard Mathlib, these custom constructs become unresolvable and produce compilation errors. **Before submitting**, strip custom attributes and project-specific constructs using sed or similar. Note: `@[category ... open ...]` triggers a misleading "Candidate uses banned 'open private' command" tool error because the parser misinterprets the word `open` inside the attribute as the `open private` command -- this is a false positive that disappears once the attribute is stripped.
 
-**Mathlib name shadowing.** Theorems named `add_zero`, `add_comm`, `mul_comm`, etc. conflict with existing Mathlib declarations, causing "already declared" errors. This silently blocks all transformation tools (they return unchanged content with zero stats). Use the `rename` endpoint to give theorems unique names, or wrap them in a custom namespace.
+**`autoImplicit` is off in Mathlib environments.** Always declare type variables explicitly (e.g., `variable {α : Type*}` or `(α : Type*)`). Implicit variables like `List α` without declaring `α` will fail.
 
-**Custom project attributes and constructs.** Files from Lean projects often use custom attributes (e.g., `@[category research open, AMS 11]`) and helper constructs (e.g., `answer(sorry)`) defined in project-specific imports. When `ignore_imports: true` replaces those imports with standard Mathlib, these become unresolvable and cause compilation errors. Strip custom attributes and project-specific constructs before submission. Note: attributes containing the word `open` (e.g., `@[category research open, ...]`) trigger a misleading "Candidate uses banned 'open private' command" error -- this is a false positive from the parser misinterpreting `open`.
+**Mathlib name shadowing.** If your theorem names match existing Mathlib declarations (e.g., `add_zero`, `add_comm`, `mul_comm`), you'll get "already declared" errors and all transformation tools will silently return unchanged content with zero stats. The error appears only in `lean_messages.errors`, not `tool_messages` -- you must inspect `lean_messages` to notice the problem. Use `rename` to give theorems unique names, or prefix with a namespace.
 
 **Silent failures from compilation errors.** Any compilation error -- not just name shadowing -- causes transformation tools (`simplify_theorems`, `repair_proofs`, `normalize`, etc.) to silently return unchanged content with all stats at zero and no `tool_messages` errors. The only signal is non-empty `lean_messages.errors`. Always inspect `lean_messages.errors` even when `tool_messages` looks clean and stats are zero.
 
-**`normalize` may miss references in theorem bodies.** When flattening namespaces, `normalize` fully qualifies declaration names (e.g., `p` becomes `Namespace.p`) but may not update all references inside theorem bodies. Always `check` the normalized output and fix any unresolved references manually.
+**`omega` cannot see through opaque definitions.** The `omega` tactic works on linear arithmetic over `Nat` and `Int`, but it treats user-defined functions as opaque. If you define `def my_double (n : Nat) := n + n` and try to prove `my_double n = 2 * n` with `omega`, it will fail because `omega` doesn't know what `my_double` computes. Use `unfold my_double` (or `simp [my_double]`) before `omega` to expose the definition.
+
+**`simplify_theorems` vs `repair_proofs` for cleanup.** These serve different purposes:
+- `simplify_theorems` with `remove_unused_tactics`: removes tactics that are no-ops (don't change the proof state at all)
+- `repair_proofs` with `remove_extraneous_tactics`: removes tactics that appear **after** the proof is already complete
+- For cleaning up redundant tactics, you usually want `repair_proofs` first, then `simplify_theorems`.
+
+**Sections and namespaces.** `extract_theorems`, `theorem2sorry`, and other transformation tools may produce non-compilable output when sections/namespaces are present because extracted names won't be fully qualified. Always run `normalize` first to flatten these constructs. Note that `normalize` preserves the original indentation from inside flattened blocks -- the output may look oddly indented but still compiles correctly. **Caveat:** `normalize` may not update all references inside theorem bodies when flattening namespaces (e.g., `p k` may not become `Namespace.p k`). Always `check` the normalized output and fix any unresolved references manually.
+
+**`rename` requires fully-qualified names.** The `declarations` parameter must use fully-qualified names including namespace prefixes. For example, if `my_thm` is inside `namespace Foo`, use `{"Foo.my_thm": "Foo.new_name"}`, not `{"my_thm": "new_name"}`. Using an unqualified name returns a `user_error` ("Source name not found").
+
+**Non-theorem commands in `extract_theorems`.** The `extract_theorems` tool warns about any non-theorem command it encounters with `"Unsupported command kind ..."`. This includes `variable`, `open`, `notation`, `set_option`, and other non-declaration commands. These warnings are informational -- the tool still correctly extracts all theorem declarations and includes dependencies (including `variable` bindings, `open` statements, etc.) in each theorem's standalone `content` block.
+
+**Always check both message types.** Transformation tools can "succeed" (return content with zero `tool_messages` errors) while the underlying code has compilation errors visible only in `lean_messages.errors`. Always inspect `lean_messages.errors` even when `tool_messages` is clean. This silent failure mode applies broadly: **any** compilation error (custom attributes, missing imports, syntax issues, name shadowing) causes transformation tools to return unchanged content with zero stats. The only signal is non-empty `lean_messages.errors`.
+
+**The environments endpoint** uses `/v1/environments` (no `/api/` prefix), while all tool endpoints use `/api/v1/{tool_name}`.
 
 ## Scope and Limitations
 

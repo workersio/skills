@@ -1,10 +1,10 @@
 # Designing Layered Invariants
 
-How to design the invariant structure that makes formal verification tractable for DeFi programs.
+How to design the invariant structure that makes formal verification tractable for stateful programs. Examples use DeFi (risk engine) as the primary domain, but the methodology applies to any program with mutable state and conservation properties.
 
 ## Contents
 - [Why Layered Invariants](#why-layered-invariants)
-- [The Five Layers](#the-five-layers) — structural, aggregates, accounting, mode, per-account
+- [The Five Layers](#the-five-layers) — structural, aggregates, accounting, mode, per-entity
 - [Composing canonical_inv()](#composing-canonical_inv)
 - [Performance-Aware Invariant Tiers](#performance-aware-invariant-tiers) — lightweight, targeted, comprehensive
 - [Delta Properties vs. Loops](#delta-properties-vs-loops)
@@ -28,6 +28,39 @@ A **monolithic invariant** that checks everything at once causes solver explosio
 
 Data structure consistency — the container itself is well-formed, independent of the values stored.
 
+**General example: slot allocator**
+```rust
+fn inv_structural(state: &ProgramState) -> bool {
+    // S0: num_used within bounds
+    if state.num_used as usize > MAX_ITEMS { return false; }
+
+    // S1: free_head is valid (sentinel or within bounds)
+    if state.free_head != u16::MAX && (state.free_head as usize) >= MAX_ITEMS {
+        return false;
+    }
+
+    // S2: Freelist acyclicity — bounded walk with visited array
+    {
+        let mut visited = [false; MAX_ITEMS];
+        let mut cursor = state.free_head;
+        let mut count: usize = 0;
+        while cursor != u16::MAX {
+            let idx = cursor as usize;
+            if idx >= MAX_ITEMS { return false; }
+            if visited[idx] { return false; }        // cycle detected
+            if state.is_used(idx) { return false; }  // free node in used set
+            visited[idx] = true;
+            count += 1;
+            if count > MAX_ITEMS { return false; }
+            cursor = state.slots[idx].next_free;
+        }
+    }
+
+    true
+}
+```
+
+**Example: DeFi risk engine**
 ```rust
 fn inv_structural(engine: &RiskEngine) -> bool {
     // S0: Configuration matches compile-time constant
@@ -77,8 +110,22 @@ fn inv_structural(engine: &RiskEngine) -> bool {
 
 ### Layer 2: Aggregate Coherence
 
-Cached O(1) aggregates match the account-level sums they represent.
+Cached O(1) aggregates match the entity-level sums they represent.
 
+**General example: slot allocator**
+```rust
+fn inv_aggregates(state: &ProgramState) -> bool {
+    let mut sum_weight: u128 = 0;
+    for idx in 0..MAX_ITEMS {
+        if state.is_used(idx) {
+            sum_weight += state.slots[idx].weight;
+        }
+    }
+    state.total_weight == sum_weight
+}
+```
+
+**Example: DeFi risk engine**
 ```rust
 fn inv_aggregates(engine: &RiskEngine) -> bool {
     let mut sum_capital: u128 = 0;
@@ -107,8 +154,17 @@ fn inv_aggregates(engine: &RiskEngine) -> bool {
 
 ### Layer 3: Accounting / Conservation
 
-The core financial invariant — funds are conserved.
+The core conservation invariant — quantities are preserved across operations.
 
+**General example: slot allocator**
+```rust
+fn inv_accounting(state: &ProgramState) -> bool {
+    // Every slot is either used or on the freelist
+    state.num_used as usize + state.num_free as usize == MAX_ITEMS
+}
+```
+
+**Example: DeFi risk engine**
 ```rust
 fn inv_accounting(engine: &RiskEngine) -> bool {
     // Primary conservation: vault >= total_capital + insurance
@@ -121,7 +177,10 @@ fn inv_accounting(engine: &RiskEngine) -> bool {
 }
 ```
 
-**Common accounting invariants for Solana programs:**
+**Common conservation invariants:**
+- `allocated + free == total_capacity`
+- `sum(weights) == total_weight`
+- `parent.children_count == children.len()`
 - `vault_balance >= sum(user_deposits) + protocol_fees`
 - `total_supply == sum(all_token_balances)`
 - `total_staked + total_unstaked == total_tokens`
@@ -131,6 +190,16 @@ fn inv_accounting(engine: &RiskEngine) -> bool {
 
 Runtime parameters are within valid ranges. State machine is in a valid mode.
 
+**General example: slot allocator**
+```rust
+fn inv_mode(state: &ProgramState) -> bool {
+    state.max_capacity > 0
+        && state.max_capacity <= MAX_ITEMS
+        && matches!(state.status, Status::Active | Status::Paused | Status::Closed)
+}
+```
+
+**Example: DeFi risk engine**
 ```rust
 fn inv_mode(engine: &RiskEngine) -> bool {
     engine.params.maintenance_margin_bps > 0
@@ -140,12 +209,31 @@ fn inv_mode(engine: &RiskEngine) -> bool {
 }
 ```
 
-### Layer 5: Per-Account
+### Layer 5: Per-Entity
 
-Individual account constraints that must hold for every active account.
+Individual entity constraints that must hold for every active entity.
 
+**General example: slot allocator**
 ```rust
-fn inv_per_account(engine: &RiskEngine) -> bool {
+fn inv_per_entity(state: &ProgramState) -> bool {
+    for idx in 0..MAX_ITEMS {
+        if state.is_used(idx) {
+            let slot = &state.slots[idx];
+
+            // PE1: weight is non-zero for used slots
+            if slot.weight == 0 { return false; }
+
+            // PE2: no sentinel values in fields that get negated
+            if slot.delta == i64::MIN { return false; }
+        }
+    }
+    true
+}
+```
+
+**Example: DeFi risk engine**
+```rust
+fn inv_per_entity(engine: &RiskEngine) -> bool {
     for idx in 0..MAX_ACCOUNTS {
         if engine.is_used(idx) {
             let acct = &engine.accounts[idx];
@@ -180,15 +268,25 @@ fn inv_per_account(engine: &RiskEngine) -> bool {
 
 ## Composing canonical_inv()
 
+**General example: slot allocator**
 ```rust
-/// The canonical invariant composes ALL 5 layers.
-/// Used in P3 (INV preservation) proofs — the most important proof pattern.
+fn canonical_inv(state: &ProgramState) -> bool {
+    inv_structural(state)     // Layer 1: data structure well-formedness
+        && inv_aggregates(state)  // Layer 2: cached totals match sums
+        && inv_accounting(state)  // Layer 3: allocated + free == capacity
+        && inv_mode(state)        // Layer 4: parameter validity
+        && inv_per_entity(state)  // Layer 5: per-entity constraints
+}
+```
+
+**Example: DeFi risk engine**
+```rust
 fn canonical_inv(engine: &RiskEngine) -> bool {
     inv_structural(engine)      // Layer 1: data structure well-formedness
         && inv_aggregates(engine)   // Layer 2: cached totals match sums
         && inv_accounting(engine)   // Layer 3: vault >= c_tot + insurance
         && inv_mode(engine)         // Layer 4: parameter validity
-        && inv_per_account(engine)  // Layer 5: per-account constraints
+        && inv_per_entity(engine)   // Layer 5: per-entity constraints
 }
 ```
 
@@ -212,7 +310,7 @@ Don't use `canonical_inv()` in every proof. Different proof types need different
 
 ### Lightweight: `valid_state()`
 
-Basic structural bounds and per-account checks. Intentionally omits expensive operations:
+Basic structural bounds and per-entity checks. Intentionally omits expensive operations:
 - No aggregate recomputation (sum over all accounts)
 - No matcher array memcmp
 - No complete freelist walk with cycle detection
@@ -364,4 +462,4 @@ fn new_creates_valid_instance() {
 
 4. **Forgetting to separate layers** — a single `is_valid()` that checks everything means every proof pays the cost of every check. Separate into layers.
 
-5. **Circular dependencies** — layer A assumes layer B, which assumes layer A. Break the cycle by ordering layers: structural → aggregates → accounting → per-account.
+5. **Circular dependencies** — layer A assumes layer B, which assumes layer A. Break the cycle by ordering layers: structural → aggregates → accounting → per-entity.

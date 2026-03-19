@@ -40,6 +40,19 @@ Additional vulnerability checks specific to staking, delegation, and reward dist
 - **Check:** Can a user unstake more than they deposited? Are delegation shares calculated correctly when the pool grows from rewards?
 - **Grep:** `delegate`, `delegation`, `shares`, `principal`
 
+### First Depositor / Share Inflation Attack
+- **Pattern:** The first depositor into a share-based staking pool can manipulate the share price by depositing a tiny amount, then donating tokens directly to inflate the share price. Subsequent depositors receive 0 shares due to rounding, effectively donating their stake to the attacker.
+- **Check:** Is there a minimum initial deposit requirement? Does the pool use virtual reserves (e.g., start with 1e9 virtual shares) to prevent share price manipulation? What happens when `deposit_amount * total_shares / total_deposits` rounds to 0?
+- **Attack:** Deposit 1 token → donate 1M tokens directly to vault → next depositor's shares round to 0 → attacker redeems all shares for 1M + next depositor's tokens
+- **Cross-ref:** Same pattern as DEX LP inflation (Neodyme research). Also seen in ERC-4626 vault exploits on EVM.
+- **Grep:** `total_shares`, `total_supply`, `shares_to_mint`, `deposit`, `first_deposit`, `virtual`
+
+### Liquid Staking Token Accounting
+- **Pattern:** Protocols that issue liquid staking tokens (LSTs) on deposit must maintain strict accounting between minted LST supply and underlying staked value. Desyncs between mint/burn and the actual staked amount create arbitrage or drain vectors.
+- **Check:** Is LST mint amount computed from the current exchange rate (total_staked / total_lst_supply)? Is burn amount symmetric? Are rewards properly reflected in the exchange rate before mint/burn? Can the exchange rate be manipulated by direct token transfers?
+- **Attack:** Manipulate exchange rate → mint excess LSTs → redeem for more underlying than deposited. Or: burn LSTs at stale exchange rate before reward distribution updates.
+- **Grep:** `lst`, `liquid_staking`, `exchange_rate`, `mint_to`, `burn`, `total_staked`, `underlying`
+
 ## Staking-Specific Grep Patterns
 
 ```bash

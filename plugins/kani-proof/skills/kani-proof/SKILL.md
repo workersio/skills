@@ -1,7 +1,24 @@
 ---
 name: kani-proof
-description: Writes Kani bounded model checker proofs for Rust programs. Proves conservation, isolation, arithmetic safety, and access control properties. Use when the user asks to write formal verification, Kani proofs, model checking, or when code contains kani::, #[kani::proof], or bounded model checking. Also use when the user mentions proving properties, verifying invariants, or checking for overflows in Rust code.
+description: >-
+  Writes Kani bounded model checker proofs for Rust programs. Proves conservation,
+  isolation, arithmetic safety, and access control properties. Use when the user asks
+  for Kani proofs, bounded model checking, or exhaustive formal verification -- or when
+  code contains kani::, #[kani::proof], or #[kani::unwind]. Do NOT use for fuzzing
+  (proptest, quickcheck, cargo-fuzz), property testing, or Miri.
 ---
+
+## Prerequisites
+
+Before writing proofs, verify tools are installed:
+
+1. **Kani:** Run `cargo kani --version`. If missing:
+   ```
+   cargo install --locked kani-verifier
+   cargo kani setup
+   ```
+
+2. **Linter (optional but recommended):** Requires Node.js. Runs via `npx -p @workersio/klint klint`.
 
 # Kani Formal Verification
 
@@ -32,15 +49,48 @@ These rules prevent the most common proof failures. Violating any one will likel
 
 ## Workflow
 
-### Step 1 — Analyze the Codebase
+### Classify the Proof
 
-Before writing any proof, spawn an Explore agent following [references/agents/kani-analyzer-agent.md](references/agents/kani-analyzer-agent.md). It will return loop bounds, existing infrastructure, and state construction patterns. Do not skip this.
+Before choosing a workflow, classify the proof:
 
-### Step 2 — Write the Proof
+- **Simple:** Target is a pure function (no `&mut self`), OR pattern is P7 (Arithmetic Safety) / P11 (Concrete Known-Bad) / Safety / Equivalence, AND no loops in the call graph, AND no multi-entity state construction needed.
+- **Standard:** Everything else — stateful mutations, P1–P6/P8–P10/P12, loops, multi-entity state.
 
-Use the agent's output to write a harness. Select a pattern from the [pattern table](#proof-patterns) and see [references/proof-patterns.md](references/proof-patterns.md) for templates.
+---
 
-### Step 3 — Lint the Proof
+### Simple Track (no agent spawns)
+
+For simple proofs, work inline without spawning sub-agents:
+
+1. **Write the proof** directly from the pattern template. Read the appropriate [references/templates/](references/templates/) file (e.g., `arithmetic-safety.rs` for P7, `safety.rs` for Safety/Equivalence) and adapt it. Start with [references/templates/infrastructure.rs](references/templates/infrastructure.rs) for shared macros.
+
+2. **Lint inline:** Run the linter directly:
+   ```bash
+   npx -p @workersio/klint klint <file>
+   ```
+   Fix any errors or warnings before proceeding.
+
+3. **Verify inline:** Run Kani directly:
+   ```bash
+   cargo kani --harness <harness_name>
+   ```
+   If it fails, apply the fixes from [Diagnosing Failures](#diagnosing-failures) and re-run.
+
+---
+
+### Standard Track (with agents)
+
+For complex proofs requiring codebase analysis, state construction, or iterative debugging:
+
+#### Step 1 — Analyze the Codebase
+
+Spawn an Explore agent following [references/agents/kani-analyzer-agent.md](references/agents/kani-analyzer-agent.md). It will return loop bounds, existing infrastructure, and state construction patterns. Do not skip this.
+
+#### Step 2 — Write the Proof
+
+Use the agent's output to write a harness. Select a pattern from the [pattern table](#proof-patterns) and see [references/proof-patterns.md](references/proof-patterns.md) for templates. Template files are available in [references/templates/](references/templates/) — read the appropriate template and adapt it. Start with `infrastructure.rs` for shared macros (assert_ok!, assert_err!, snapshot types).
+
+#### Step 3 — Lint the Proof
 
 After writing the proof and **before** running `cargo kani`, spawn a linter agent following [references/agents/kani-linter-agent.md](references/agents/kani-linter-agent.md). The linter statically detects 23 common anti-patterns (contradictory assumes, missing unwind, vacuity risks, over-constrained inputs, etc.) in seconds — far faster than the minutes-long `cargo kani` run.
 
@@ -50,7 +100,7 @@ After writing the proof and **before** running `cargo kani`, spawn a linter agen
 
 Fix all errors and address warnings, then re-run the linter until clean before proceeding to Step 4.
 
-### Step 4 — Verify and Iterate
+#### Step 4 — Verify and Iterate
 
 After the linter is clean, spawn a verifier agent following [references/agents/kani-verifier-agent.md](references/agents/kani-verifier-agent.md). It runs `cargo kani`, parses the output, and returns a structured diagnosis.
 
@@ -107,9 +157,21 @@ Only relevant if you get an "unwinding assertion" error. Add `#[kani::unwind(N)]
 
 **Iterative approach:** Start SIMPLE (no decorators, unconstrained inputs, API-built state) → add constraints only on timeout/OOM → add unwind only on unwinding errors → switch solver only on timeout.
 
+## When NOT to Use Kani
+
+Kani has real limits. These situations will waste significant time on doomed proofs:
+
+| Situation | Why Kani Struggles | Better Tool |
+|-----------|-------------------|-------------|
+| Floating-point arithmetic | No symbolic f32/f64 | proptest, bolero |
+| Async code | Runtime not modeled | tokio::test + proptest |
+| Network/IO | Cannot model syscalls | Integration tests |
+| Deep recursion w/o contracts | Unbounded unrolling | Function contracts or proptest |
+| Very large state (>1000 elements) | Solver timeout | Narrow with `#[cfg(kani)]` or fuzz |
+
 ## Proof Patterns
 
-See [references/proof-patterns.md](references/proof-patterns.md) for templates.
+See [references/proof-patterns.md](references/proof-patterns.md) for full pattern documentation. Template files are available in [references/templates/](references/templates/) — read the appropriate template and adapt it. Start with `infrastructure.rs` for shared macros (assert_ok!, assert_err!, snapshot types).
 
 | Pattern | When to Use | What It Proves |
 |---------|-------------|----------------|
@@ -157,6 +219,7 @@ The Explore agent identifies what's needed. Common preparations:
 ## Reference Files
 
 - [references/proof-patterns.md](references/proof-patterns.md) — Pattern catalog with templates and examples
+- [references/templates/](references/templates/) — Rust template files for each proof pattern (infrastructure, conservation, frame-isolation, arithmetic-safety, inductive-delta, safety)
 - [references/kani-features.md](references/kani-features.md) — Kani API: contracts, stubbing, concrete playback, partitioned verification
 - [references/invariant-design.md](references/invariant-design.md) — Layered invariant design methodology
 - [references/anchor-verification.md](references/anchor-verification.md) — Anchor program verification with OtterSec annotations
