@@ -45,8 +45,10 @@ Save these files to `<output_dir>/`:
    env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT claude -p ...
    ```
    **NEVER run `claude -p` without this prefix.**
+   **Why this is safe:** `env -u` only affects the child process environment. The parent session remains protected. The child runs in a sandboxed directory with tool restrictions.
 
 2. **SKIP PERMISSIONS** — Always pass `--dangerously-skip-permissions`. Without this, `claude -p` hangs forever waiting for a human to approve tool use — there is no human in headless mode.
+   **Security mitigation:** The `--allowedTools` flag on every session restricts the nested session to only file I/O tools (Read, Write, Edit, Bash, Grep, Glob). This prevents access to network tools, MCP servers, or other privileged capabilities.
 
 3. **ISOLATION** — Each session MUST `cd` into its own sandbox directory before running. This prevents file collisions between with-skill and baseline sessions. Use absolute paths for the output redirect.
 
@@ -75,6 +77,7 @@ env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT \
 For **with-skill** mode:
 - `<tools>` is: `Skill(<skill_name>),Read,Edit,Bash,Grep,Glob,Write`
 - `<append_system_prompt_flag>` is: `--append-system-prompt "IMPORTANT: Before starting any work, you MUST first call the Skill tool with skill=\"<skill_name>\" to load the relevant skill instructions. Follow whatever instructions the skill provides throughout your work."`
+  Note: This is a fixed template — only `<skill_name>` is substituted from the benchmark config. No external or user-supplied content is injected into the system prompt.
 
 For **baseline** mode:
 - `<tools>` is: `Read,Edit,Bash,Grep,Glob,Write`

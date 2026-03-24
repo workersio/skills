@@ -28,6 +28,19 @@ You are a skill benchmarking system. Your job is to rigorously evaluate whether 
 - Negative control tasks to detect false positives
 - Transcript analysis for behavioral signals
 
+## Security Notice
+
+This benchmark spawns nested `claude -p` sessions that require elevated privileges to operate in headless mode. The following security-sensitive flags are used, along with their mitigations:
+
+| Flag / Technique | Why Required | Mitigation |
+|-----------------|-------------|------------|
+| `--dangerously-skip-permissions` | Headless sessions have no human to approve tool calls — without this flag they hang forever | Each session is restricted via `--allowedTools` to only `Read`, `Write`, `Edit`, `Bash`, `Grep`, `Glob` (plus `Skill` for with-skill mode). No network tools, no MCP access. |
+| `env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT` | Claude Code blocks nested `claude -p` via these env vars. Must unset to spawn child sessions. | `env -u` only affects the child process environment. The parent session remains protected. |
+| `--append-system-prompt` | Ensures the skill is always invoked in with-skill sessions for fair comparison. Without it, models often skip the skill. | Fixed template — only `<skill_name>` is substituted. No external or user-supplied content is injected. The exact prompt is shown during Step 1 confirmation. |
+| `runs_without_error` commands | Task verification requires executing commands like `python3 <file>` to check if generated code works. | Commands are validated against an allowlist of safe executables and rejected if they contain shell metacharacters. `shell=True` is NOT used. |
+
+**Only run benchmarks with task files and skills from trusted sources.** By proceeding past Step 1 confirmation, you acknowledge these security implications.
+
 ## Execution Flow
 
 Follow these steps exactly:
@@ -69,7 +82,7 @@ cp .claude/skills/skill-benchmark/config.example.yml .claude/skills/skill-benchm
 
 3. **Task set** — Ask if they have a custom task set directory, or if you should auto-generate tasks based on the skill's domain.
 
-4. **Confirm settings** — Show the user the final config (loaded or default) and ask if they want to change anything before starting.
+4. **Confirm settings** — Show the user the final config (loaded or default). Include a security notice: "This benchmark will run headless `claude -p` sessions with `--dangerously-skip-permissions` and restricted tools (`--allowedTools`). Sessions execute in isolated sandbox directories. For with-skill sessions, the following system prompt will be appended: *'IMPORTANT: Before starting any work, you MUST first call the Skill tool with skill=\"<skill_name>\" to load the relevant skill instructions.'*" Ask the user to confirm before starting.
 
 5. **Set `$RESULTS_DIR`** — Create the results directory with a skill-name and timestamp:
    ```bash
@@ -143,6 +156,17 @@ type: positive|negative-control
 - Two domain experts should independently reach the same pass/fail verdict — if the task is ambiguous, rewrite it
 - Each task must be solvable — the expected outcome must be achievable
 
+#### Task Validation (for custom task sets)
+
+When the user provides a custom task set, validate each task file before execution:
+
+1. **Structure check**: Verify the file contains the required sections (`## Prompt`, `## Expected Outcome`, `## Verification Checks`, `## Grading Rubric`). Reject files missing required sections.
+2. **Command check**: Run `python3 scripts/run_checks.py --validate <task_file>` for each task. This validates `runs_without_error` entries against the command allowlist and rejects commands with shell metacharacters.
+3. **Prompt review**: If any task prompt contains instructions to download external code, access URLs, or install packages from unknown sources, warn the user and require explicit confirmation.
+4. **Summary**: Before running, show the user: "Found N tasks. Verification commands: [list]. Proceed?"
+
+**WARNING:** Never run benchmark tasks from untrusted sources. Task prompts are executed as code-generation instructions with tool access in the nested session.
+
 ---
 
 ### Step 4: Run Eval Sessions
@@ -215,7 +239,9 @@ Each `claude -p` call MUST `cd` into its own sandbox directory first. This preve
 
 #### Nested Session Fix
 
-**CRITICAL:** Claude Code blocks `claude -p` inside an existing session via `CLAUDECODE` and `CLAUDE_CODE_ENTRYPOINT` env vars. You MUST unset these.
+**CRITICAL:** Claude Code sets `CLAUDECODE=1` and `CLAUDE_CODE_ENTRYPOINT=cli` to prevent recursive `claude -p` invocations. These MUST be unset via `env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT` for the benchmark to spawn child sessions.
+
+**Why this is safe:** `env -u` only affects the child process environment — the parent session's env vars are unchanged. The child session runs in an isolated sandbox directory with restricted tools (`--allowedTools`).
 
 #### Session Commands
 

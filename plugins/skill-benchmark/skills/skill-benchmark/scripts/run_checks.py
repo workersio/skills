@@ -16,6 +16,7 @@ Produces:
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 
@@ -49,6 +50,39 @@ def parse_verification_checks(task_content):
             checks[check_type].append(value)
 
     return checks
+
+
+# Allowed executables for runs_without_error commands
+ALLOWED_EXECUTABLES = {
+    "python3", "python", "node", "npx", "ruby", "cargo", "go", "java", "javac",
+    "rustc", "gcc", "g++", "make", "bash", "sh",
+}
+
+# Shell metacharacters that indicate injection risk
+SHELL_METACHARACTERS = set(";|&$`><(){}[]!#~")
+
+
+def validate_and_split_command(cmd):
+    """Validate a command against the allowlist and return split args.
+
+    Returns (args_list, error_string). If error_string is not None, the command
+    is rejected.
+    """
+    if any(c in cmd for c in SHELL_METACHARACTERS):
+        return None, f"rejected (shell metacharacters): {cmd}"
+
+    try:
+        parts = shlex.split(cmd)
+    except ValueError as e:
+        return None, f"rejected (parse error): {cmd} — {e}"
+
+    if not parts:
+        return None, f"rejected (empty command): {cmd}"
+
+    if parts[0] not in ALLOWED_EXECUTABLES:
+        return None, f"rejected (not in allowlist): {parts[0]}"
+
+    return parts, None
 
 
 def run_checks(task_file, sandbox_dir, output_path):
@@ -111,9 +145,14 @@ def run_checks(task_file, sandbox_dir, output_path):
     # runs_without_error
     run_results = {}
     for cmd in check_defs["runs_without_error"]:
+        args, rejection_reason = validate_and_split_command(cmd)
+        if rejection_reason:
+            run_results[cmd] = False
+            details.append(rejection_reason)
+            continue
         try:
             r = subprocess.run(
-                cmd, shell=True, capture_output=True, cwd=sandbox_dir, timeout=30
+                args, shell=False, capture_output=True, cwd=sandbox_dir, timeout=30
             )
             run_results[cmd] = r.returncode == 0
             if r.returncode != 0:
@@ -214,6 +253,31 @@ if __name__ == "__main__":
     if "--help" in sys.argv or "-h" in sys.argv:
         print(HELP_TEXT)
         sys.exit(0)
+
+    if "--validate" in sys.argv:
+        if len(sys.argv) != 3:
+            print(f"Usage: {sys.argv[0]} --validate <task_file>")
+            sys.exit(1)
+        task_file = sys.argv[2]
+        with open(task_file) as f:
+            task_content = f.read()
+        check_defs = parse_verification_checks(task_content)
+        issues = []
+        for cmd in check_defs["runs_without_error"]:
+            _, rejection = validate_and_split_command(cmd)
+            if rejection:
+                issues.append(rejection)
+        if issues:
+            print(f"VALIDATION FAILED: {len(issues)} issue(s)")
+            for issue in issues:
+                print(f"  - {issue}")
+            sys.exit(1)
+        else:
+            print(f"VALIDATION OK: {len(check_defs['runs_without_error'])} commands, "
+                  f"{len(check_defs['file_exists'])} file checks, "
+                  f"{len(check_defs['syntax_valid'])} syntax checks, "
+                  f"{len(check_defs['file_contains'])} content checks")
+            sys.exit(0)
 
     if len(sys.argv) != 4:
         print(f"Usage: {sys.argv[0]} <task_file> <sandbox_dir> <output_path>")
