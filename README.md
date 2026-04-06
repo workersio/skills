@@ -26,6 +26,10 @@ Verify, check, transform, and repair Lean 4 proofs using the Axiom (Axle) API an
 
 Benchmark any agent skill to measure whether it actually improves performance. Runs isolated eval sessions with and without the skill, grades outputs via layered grading (deterministic checks + LLM-as-judge), analyzes behavioral signals, and generates a comparison report with a USE / DON'T USE verdict.
 
+### workers-app-tester
+
+Pentest Android apps on a rooted device. The agent drives the UI over ADB, intercepts HTTPS traffic through mitmproxy, bypasses SSL pinning with Frida, decompiles APKs for static analysis, and runs security checks for IDORs, auth issues, data exposure, and hardcoded secrets. Includes bundled scripts for UI parsing, traffic capture, traffic analysis, and a universal SSL bypass.
+
 ---
 
 ## Install
@@ -62,6 +66,11 @@ plugins/
     skills/skill-benchmark/scripts/
     skills/skill-benchmark/agents/
     skills/skill-benchmark/references/
+  workers-app-tester/                # Android app pentesting
+    .claude-plugin/plugin.json
+    skills/workers-app-tester/SKILL.md
+    skills/workers-app-tester/scripts/
+    skills/workers-app-tester/references/
 ```
 
 Each plugin lives under `plugins/` with its own `.claude-plugin/plugin.json` manifest and `skills/` directory. The root `.claude-plugin/marketplace.json` catalogs all plugins for marketplace discovery.
