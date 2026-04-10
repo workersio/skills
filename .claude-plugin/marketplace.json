@@ -29,6 +29,11 @@
       "name": "skill-benchmark",
       "source": "./plugins/skill-benchmark",
       "description": "Benchmark any agent skill to measure whether it actually improves performance"
+    },
+    {
+      "name": "workers-app-tester",
+      "source": "./plugins/workers-app-tester",
+      "description": "Pentest Android apps on a rooted device with ADB, mitmproxy, Frida, and UI Automator"
     }
   ]
 }
