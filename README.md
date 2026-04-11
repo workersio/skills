@@ -5,7 +5,7 @@
   <br>
 
   <p>
-    <strong>Claude Code skills that help you prove, verify, audit, and test your software.</strong>
+    <strong>Claude Code Skills for Software Correctness</strong>
     <br>
     Formal verification, model checking, security auditing, proof repair, and benchmarking — as slash commands.
   </p>
