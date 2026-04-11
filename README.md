@@ -7,17 +7,9 @@
   <p>
     <strong>Claude Code skills that help you prove, verify, audit, and test your software.</strong>
     <br>
-    Formal verification, bounded model checking, security auditing, proof repair, and benchmarking — as slash commands.
+    Formal verification, model checking, security auditing, proof repair, and benchmarking — as slash commands.
   </p>
 
-  <br>
-
-  <p>
-    <a href="#quick-start"><img src="https://img.shields.io/badge/quick_start-000000?style=flat-square" alt="Quick Start"></a>&nbsp;
-    <a href="https://github.com/workersio/spec"><img src="https://img.shields.io/github/stars/workersio/spec?style=flat-square&labelColor=000000&color=1a1a1a" alt="Stars"></a>&nbsp;
-    <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-1a1a1a?style=flat-square&labelColor=000000" alt="MIT License"></a>&nbsp;
-    <a href="https://github.com/workersio/spec/pulls"><img src="https://img.shields.io/badge/PRs-welcome-1a1a1a?style=flat-square&labelColor=000000" alt="PRs Welcome"></a>
-  </p>
 </div>
 
 <br>
@@ -26,7 +18,7 @@
 
 - [Quick Start](#quick-start)
 - [Plugins](#plugins)
-  - [kani-proof](#kani-proof) — Bounded model checking for Rust and Solana
+  - [kani-proof](#kani-proof) — Model checking for Rust and Solana
   - [solana-audit](#solana-audit) — Smart contract security audits
   - [axiom](#axiom) — Lean 4 proof verification and repair
   - [skill-benchmark](#skill-benchmark) — Measure whether a skill actually helps
