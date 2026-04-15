@@ -50,6 +50,13 @@ Benchmark any agent skill to measure whether it actually improves performance. R
 - **Agents**: `skills/skill-benchmark/agents/` (runner.md, grader.md, reporter.md)
 - **References**: `skills/skill-benchmark/references/` (CONFIG.md, DIRECTORY-STRUCTURE.md)
 
+### fuzzer (`plugins/fuzzer/`)
+
+Coverage-guided fuzzing workflow for C/C++, Rust, and Go targets. Runs deep audit context building to locate suspicious code, writes targeted harnesses, builds with sanitizers, runs the fuzzer, and reports crashes.
+
+- **Skills**: `skills/fuzzer/SKILL.md`, `skills/audit-context-building/SKILL.md`
+- **Manifest**: `plugins/fuzzer/.claude-plugin/plugin.json`
+
 ## Architecture
 
 ```
