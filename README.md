@@ -18,6 +18,7 @@
 
 - [Quick Start](#quick-start)
 - [Plugins](#plugins)
+  - [fuzzer](#fuzzer) — Coverage-guided fuzzing for C/C++, Rust, and Go
   - [kani-proof](#kani-proof) — Model checking for Rust and Solana
   - [solana-audit](#solana-audit) — Smart contract security audits
   - [axiom](#axiom) — Lean 4 proof verification and repair
@@ -41,6 +42,7 @@ npx skills add workersio/spec
 Individual plugins can be selected during installation. Once installed, invoke any skill by name inside Claude Code:
 
 ```
+/fuzzer            Coverage-guided fuzzing with audit-driven harness design
 /kani-proof        Write bounded model checker proofs for Rust and Solana
 /solana-audit      Run a structured smart contract security audit
 /axiom             Verify and repair Lean 4 proofs
@@ -52,6 +54,28 @@ Individual plugins can be selected during installation. Once installed, invoke a
 <br>
 
 ## Plugins
+
+### fuzzer
+
+Coverage-guided fuzzing workflow for C/C++, Rust, and Go targets. Runs a deep audit-context-building pass first to locate suspicious code, then writes a targeted harness, builds with sanitizers, runs the fuzzer, and reports crashes with reproducers.
+
+**Use case** — Find memory safety bugs, integer overflows, and logic faults in native code through coverage-guided fuzzing driven by prior code understanding.
+
+```
+/fuzzer
+```
+
+<details>
+<summary>What's included</summary>
+<br>
+
+- `fuzzer` skill — end-to-end harness authoring, build, run, and triage workflow
+- `audit-context-building` skill — line-by-line analysis using First Principles, 5 Whys, and 5 Hows to locate fuzz targets
+- Function-analyzer agent and reference docs for completeness, output requirements, and worked micro-analysis examples
+
+</details>
+
+---
 
 ### kani-proof
 
@@ -176,6 +200,12 @@ Converts Claude Code conversations into reusable agents. Analyzes the current se
 ```
 .claude-plugin/marketplace.json       Root marketplace catalog
 plugins/
+  fuzzer/                              Coverage-guided fuzzing workflow
+    .claude-plugin/plugin.json
+    skills/fuzzer/SKILL.md
+    skills/audit-context-building/SKILL.md
+    skills/audit-context-building/agents/
+    skills/audit-context-building/resources/
   kani-proof/                          Bounded model checking for Rust
     .claude-plugin/plugin.json
     skills/kani-proof/SKILL.md
