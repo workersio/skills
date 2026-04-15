@@ -34,6 +34,11 @@
       "name": "workers-app-tester",
       "source": "./plugins/workers-app-tester",
       "description": "Pentest Android apps on a rooted device with ADB, mitmproxy, Frida, and UI Automator"
+    },
+    {
+      "name": "fuzzer",
+      "source": "./plugins/fuzzer",
+      "description": "Coverage-guided fuzzing workflow for C/C++, Rust, and Go with deep audit context building"
     }
   ]
 }

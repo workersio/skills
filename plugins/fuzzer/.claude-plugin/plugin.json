@@ -1,0 +1,10 @@
+{
+  "name": "fuzzer",
+  "version": "0.1.0",
+  "description": "Coverage-guided fuzzing workflow for C/C++, Rust, and Go with deep audit context building",
+  "author": {
+    "name": "workers.io"
+  },
+  "repository": "https://github.com/workersio/spec",
+  "license": "MIT"
+}
