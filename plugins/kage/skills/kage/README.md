@@ -99,7 +99,6 @@ kage/
 └── assets/        # Dockerfile, compose.yml, creds template, dorks, wordlists
 ```
 
-Follows the [Agent Skills specification](https://agentskills.io/specification).
 
 ## Scope and safety
 
