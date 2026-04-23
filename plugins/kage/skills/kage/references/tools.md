@@ -71,4 +71,3 @@ or `scripts/browser.py` — never raw `curl`.
 - `tls.py`, `browser.py` — HTTP transports (curl_cffi and Camoufox respectively)
 - `client.py` — shared `make_request()` wrapper
 - `dorks.py`, `gitmail.py` — OSINT
-- `sneaky_bits.py` — invisible-Unicode prompt-injection encoder for LLM feature testing

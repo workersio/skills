@@ -1,8 +1,3 @@
----
-name: reporting
-description: Bug bounty report writing for HackerOne, Bugcrowd, Intigriti, and direct VDPs. Generates copy-paste ready reports with reproduction steps, raw HTTP evidence, business-language impact, and CVSS scoring. Use after findings are validated by the judge.
----
-
 # Report Writing and Validation Techniques
 
 The report is the product. Not the bug. The report.
