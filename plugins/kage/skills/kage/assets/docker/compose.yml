@@ -1,0 +1,38 @@
+# Kage sandbox — one container per engagement (host working directory).
+#
+# KAGE_SLUG and KAGE_WORKSPACE are exported by the `k` shim at spawn time.
+# Container names, labels, and the bind mount all follow from $PWD, so two
+# different project folders get two fully isolated sandboxes automatically.
+
+services:
+  kage:
+    image: kage:latest
+    container_name: kage-${KAGE_SLUG}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    hostname: kage-${KAGE_SLUG}
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    working_dir: /workspace
+    volumes:
+      - "${KAGE_WORKSPACE:-./}:/workspace"
+      # Skill directory (scripts, agents, references) bound read-only at /skill
+      # so probes are reachable regardless of which host folder the user runs
+      # `claude` from. KAGE_SKILL_DIR is exported by scripts/k at spawn time.
+      - "${KAGE_SKILL_DIR:-./}:/skill:ro"
+      # Shared tool-data caches (read-mostly, safe to share across engagements).
+      - kage-nuclei-templates:/home/pentester/nuclei-templates
+      - kage-go-cache:/home/pentester/.cache/go-build
+    labels:
+      kage.engagement: "${KAGE_SLUG}"
+      kage.workspace: "${KAGE_WORKSPACE}"
+    mem_limit: 4g
+    cpus: 4.0
+    command: ["sleep", "infinity"]
+
+volumes:
+  kage-nuclei-templates:
+  kage-go-cache:

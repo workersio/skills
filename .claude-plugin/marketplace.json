@@ -39,6 +39,11 @@
       "name": "fuzzer",
       "source": "./plugins/fuzzer",
       "description": "Coverage-guided fuzzing workflow for C/C++, Rust, and Go with deep audit context building"
+    },
+    {
+      "name": "kage",
+      "source": "./plugins/kage",
+      "description": "Local pentest sandbox for black-box, greybox, and white-box security audits inside a per-engagement Kali Docker container"
     }
   ]
 }

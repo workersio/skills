@@ -57,6 +57,17 @@ Coverage-guided fuzzing workflow for C/C++, Rust, and Go targets. Runs deep audi
 - **Skills**: `skills/fuzzer/SKILL.md`, `skills/audit-context-building/SKILL.md`
 - **Manifest**: `plugins/fuzzer/.claude-plugin/plugin.json`
 
+### kage (`plugins/kage/`)
+
+Local pentest sandbox for black-box, greybox, and white-box engagements. Every tool runs inside a per-engagement Kali Docker container driven by the `k` shim. Orchestrates recon, parallel tester sub-agents, verifier, chain-builder, judge, and report-writer into a single `./results/<target>/audit-report.md`.
+
+- **Skill**: `skills/kage/SKILL.md` (`/kage`)
+- **Manifest**: `plugins/kage/.claude-plugin/plugin.json`
+- **Scripts**: `skills/kage/scripts/` (`k` shim, tls/browser clients, per-class probes)
+- **Agents**: `skills/kage/agents/` (testers, verifier, chain-builder, judge, report-writer)
+- **References**: `skills/kage/references/` (methodology, judging, chains, report formatting, bundled audit-context-building + agentmail)
+- **Assets**: `skills/kage/assets/` (Dockerfile, compose.yml, creds template, dorks, wordlist strategy)
+
 ## Architecture
 
 ```

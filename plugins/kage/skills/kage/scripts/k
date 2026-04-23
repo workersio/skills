@@ -1,0 +1,207 @@
+#!/usr/bin/env bash
+
+
+# Subcommands:
+#   k <cmd>...      run <cmd> inside the sandbox for $PWD
+#   k               open an interactive shell in that sandbox
+#   k ls            list all kage containers on this host
+#   k reset         remove this folder's container (force fresh on next run)
+#   k prune         remove containers whose workspace no longer exists
+#   k nuke          remove every kage container (keeps image and volumes)
+#   k help          show this message
+
+set -eo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+SKILL_DIR="$(cd "$SCRIPT_DIR/.." && pwd -P)"
+COMPOSE_FILE="$SKILL_DIR/assets/docker/compose.yml"
+STATE_DIR="$SKILL_DIR/.state"
+mkdir -p "$STATE_DIR" 2>/dev/null || true
+
+# ----- helpers -------------------------------------------------------------
+
+slug() {
+  local base hash cwd
+  cwd="$(pwd -P)"
+  base="$(basename "$cwd" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-')"
+  base="${base:-project}"
+  base="${base:0:40}"
+  base="${base%-}"
+  hash="$(printf '%s' "$cwd" | shasum -a 1 | cut -c1-6)"
+  printf 'kage-%s-%s\n' "$base" "$hash"
+}
+
+docker_available() {
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "[kage] docker not installed. Install Docker Desktop:" >&2
+    echo "       https://docs.docker.com/desktop/" >&2
+    exit 127
+  fi
+  if ! docker info >/dev/null 2>&1; then
+    echo "[kage] docker daemon not running. Start Docker and re-run." >&2
+    exit 126
+  fi
+}
+
+# If $PWD sits inside an existing kage container's workspace, emit that
+# container + its workspace. Prevents spawning a fresh container for every
+# subdirectory the caller happens to cd into. Longest matching workspace wins
+# so nested engagements (if any) still route to the most specific one.
+find_parent_container() {
+  local cwd="$(pwd -P)" best_name="" best_ws=""
+  while IFS=$'\t' read -r name ws; do
+    [ -n "$name" ] && [ -n "$ws" ] || continue
+    if [ "$cwd" = "$ws" ] || [ "${cwd#$ws/}" != "$cwd" ]; then
+      if [ ${#ws} -gt ${#best_ws} ]; then
+        best_name="$name"
+        best_ws="$ws"
+      fi
+    fi
+  done < <(docker ps -a --filter "label=kage.engagement" \
+             --format '{{.Names}}	{{.Label "kage.workspace"}}' 2>/dev/null)
+  printf '%s\t%s\n' "$best_name" "$best_ws"
+}
+
+# ----- subcommands ---------------------------------------------------------
+
+cmd_ls() {
+  docker_available
+  printf '%-44s %-22s %s\n' 'CONTAINER' 'STATUS' 'WORKSPACE'
+  docker ps -a --filter "label=kage.engagement" \
+    --format '{{.Names}}	{{.Status}}	{{.Label "kage.workspace"}}' \
+    | awk -F'\t' '{ printf "%-44s %-22s %s\n", $1, $2, $3 }'
+}
+
+cmd_prune() {
+  docker_available
+  local removed=0
+  while IFS=$'\t' read -r name ws; do
+    [ -n "$name" ] || continue
+    if [ -n "$ws" ] && [ ! -d "$ws" ]; then
+      echo "[kage] removing orphan: $name (workspace '$ws' gone)" >&2
+      docker rm -f "$name" >/dev/null 2>&1 || true
+      removed=$((removed + 1))
+    fi
+  done < <(docker ps -a --filter "label=kage.engagement" \
+             --format '{{.Names}}	{{.Label "kage.workspace"}}')
+  echo "[kage] pruned $removed orphan container(s)." >&2
+}
+
+cmd_nuke() {
+  docker_available
+  local names
+  names="$(docker ps -a --filter "label=kage.engagement" --format '{{.Names}}' | tr '\n' ' ')"
+  if [ -z "${names// /}" ]; then
+    echo "[kage] no kage containers to remove." >&2
+    return 0
+  fi
+  # shellcheck disable=SC2086
+  docker rm -f $names >/dev/null 2>&1 || true
+  echo "[kage] removed:$names" >&2
+}
+
+cmd_reset() {
+  docker_available
+  local container
+  container="$(slug)"
+  if docker ps -a --filter "name=^${container}$" -q | grep -q .; then
+    docker rm -f "$container" >/dev/null 2>&1 || true
+    echo "[kage] reset: removed $container" >&2
+  else
+    echo "[kage] no container to reset for $(pwd -P)." >&2
+  fi
+}
+
+cmd_help() {
+  sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+case "${1:-}" in
+  ls|--ls)                    cmd_ls;    exit 0 ;;
+  prune|--prune)              cmd_prune; exit 0 ;;
+  nuke|--nuke)                cmd_nuke;  exit 0 ;;
+  reset|--reset|--teardown)   cmd_reset; exit 0 ;;
+  help|--help|-h)             cmd_help;  exit 0 ;;
+esac
+
+# ----- main exec path ------------------------------------------------------
+
+docker_available
+
+IFS=$'\t' read -r PARENT_NAME PARENT_WS < <(find_parent_container)
+if [ -n "$PARENT_NAME" ] && [ "$PARENT_WS" != "$(pwd -P)" ]; then
+  echo "[kage] $(pwd -P) is inside engagement at $PARENT_WS; reusing container $PARENT_NAME." >&2
+  CONTAINER="$PARENT_NAME"
+  WORKSPACE="$PARENT_WS"
+else
+  CONTAINER="$(slug)"
+  WORKSPACE="$(pwd -P)"
+fi
+KAGE_SLUG="${CONTAINER#kage-}"
+
+bootstrap_if_needed() {
+  if docker ps --filter "name=^${CONTAINER}$" --filter "status=running" -q | grep -q .; then
+    return 0
+  fi
+
+  # Portable lock (mkdir is atomic on macOS + Linux; no flock dependency).
+  local lock="$STATE_DIR/${CONTAINER}.lock"
+  local waited=0
+  while ! mkdir "$lock" 2>/dev/null; do
+    waited=$((waited + 1))
+    if [ "$waited" -ge 120 ]; then
+      echo "[kage] timed out waiting for bootstrap lock $lock." >&2
+      exit 124
+    fi
+    sleep 1
+  done
+  # shellcheck disable=SC2064
+  trap "rmdir '$lock' 2>/dev/null || true" EXIT
+
+  # Re-check once we hold the lock.
+  if ! docker ps --filter "name=^${CONTAINER}$" --filter "status=running" -q | grep -q .; then
+    echo "[kage] starting sandbox for $WORKSPACE (first start may pull ~2.5GB)..." >&2
+
+    if docker ps -a --filter "name=^${CONTAINER}$" -q | grep -q .; then
+      docker start "$CONTAINER" >/dev/null
+    else
+      KAGE_SLUG="$KAGE_SLUG" \
+      KAGE_WORKSPACE="$WORKSPACE" \
+      KAGE_SKILL_DIR="$SKILL_DIR" \
+        docker compose -p "$CONTAINER" -f "$COMPOSE_FILE" up -d >&2
+    fi
+
+    for _ in $(seq 1 60); do
+      if docker exec "$CONTAINER" which nmap >/dev/null 2>&1; then break; fi
+      sleep 1
+    done
+    if ! docker exec "$CONTAINER" which nmap >/dev/null 2>&1; then
+      echo "[kage] container $CONTAINER failed health check. Inspect:" >&2
+      echo "       docker logs $CONTAINER" >&2
+      rmdir "$lock" 2>/dev/null || true
+      exit 125
+    fi
+    echo "[kage] sandbox ready: $CONTAINER" >&2
+  fi
+
+  rmdir "$lock" 2>/dev/null || true
+  trap - EXIT
+}
+
+bootstrap_if_needed
+
+if [ "$#" -eq 0 ]; then
+  exec docker exec -it -w /workspace "$CONTAINER" bash -l
+fi
+
+# Rewrite host paths → container paths on each argv element, preserving
+# argument boundaries. SKILL_DIR is rewritten before WORKSPACE because the
+# skill dir often lives under the workspace and the longer prefix must win.
+args=()
+for a in "$@"; do
+  a="${a//$SKILL_DIR//skill}"
+  a="${a//$WORKSPACE//workspace}"
+  args+=("$a")
+done
+
+exec docker exec -w /workspace -i "$CONTAINER" "${args[@]}"
