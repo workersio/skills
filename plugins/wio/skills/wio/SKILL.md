@@ -76,7 +76,7 @@ If subagents are unavailable, perform the same stages in the main agent and expl
 
 Find the best parts to test next, the right strategy for each, and the ROI of testing them. This mode is read-only: inspect the repo, existing tests, and references; do not edit files.
 
-Start with:
+**Start with:**
 
 - [Behavior To Test Map](references/behavior-to-test-map/overview.md)
 - [Risk-Based Testing](references/risk-based-testing/overview.md)
@@ -84,7 +84,7 @@ Start with:
 - [Test Level Selection](references/test-level-selection/overview.md)
 - [Testing References Index](references/index.md)
 
-Workflow:
+**Workflow:**
 
 1. Establish product/customer context from repo evidence.
 2. Inventory existing test frameworks, commands, fixtures, CI, and test layers.
@@ -92,7 +92,7 @@ Workflow:
 4. Choose the narrowest test strategy that preserves the real user or production risk.
 5. Rank candidates by impact, likelihood, confidence gap, and cost.
 
-Output:
+**Output:**
 
 - Scope and evidence inspected.
 - Ranked candidates, ideally 3-5.
@@ -104,7 +104,7 @@ Output:
 
 Write tests only when they protect meaningful behavior. A useful test reduces future user errors, production incidents, support work, debugging time, review time, or release risk. Do not jump straight to implementation.
 
-Start with:
+**Start with:**
 
 - [Test Level Selection](references/test-level-selection/overview.md)
 - [Test Oracles And Assertions](references/test-oracles-and-assertions/overview.md)
@@ -113,7 +113,7 @@ Start with:
 - [Test Feedback Loops](references/test-feedback-loops/overview.md)
 - [Testing References Index](references/index.md)
 
-Workflow:
+**Workflow:**
 
 1. Discover the highest-value candidate in scope from product risk, code shape, existing tests, CI, and user/developer impact.
 2. Pick the right strategy: test level, oracle, data/fixture setup, doubles, and feedback loop.
@@ -123,7 +123,7 @@ Workflow:
 6. Review the test for value, signal, maintainability, and developer flow impact.
 7. Apply the value gate before finalizing: `KEEP`, `REDO`, or `REMOVE`.
 
-Output:
+**Output:**
 
 - Candidate chosen and why it beat alternatives.
 - Strategy chosen and why it preserves the real risk.
@@ -138,7 +138,7 @@ Output:
 
 Review a test as a quality gate, not as a rubber stamp. The test must justify its existence through customer value, production value, support/debugging value, review value, or release confidence.
 
-Start with:
+**Start with:**
 
 - [Test Oracles And Assertions](references/test-oracles-and-assertions/overview.md)
 - [Test Data And Fixtures](references/test-data-and-fixtures/overview.md)
@@ -147,7 +147,7 @@ Start with:
 - [Mutation Testing](references/mutation-testing/overview.md)
 - [Testing References Index](references/index.md)
 
-Workflow:
+**Workflow:**
 
 1. Identify the behavior or failure mode the test claims to protect.
 2. Check whether that behavior matters to a user, operator, customer, API consumer, release, support/debugging loop, or developer workflow.
@@ -156,7 +156,7 @@ Workflow:
 5. Check whether the validation command is the smallest useful loop and whether CI placement is appropriate.
 6. Return `KEEP`, `REDO`, or `REMOVE` with evidence.
 
-Output:
+**Output:**
 
 - Verdict: `KEEP`, `REDO`, or `REMOVE`.
 - Protected behavior and value.
@@ -168,14 +168,14 @@ Output:
 
 Run a read-only test-suite health scan and report likely concerns with evidence. Do not edit, delete, rewrite, quarantine, or disable tests.
 
-Start with:
+**Start with:**
 
 - [Test Suite Health Diagnostics](references/test-suite-health-diagnostics/overview.md)
 - [Flaky Test Detection and Management](references/flaky-test-detection-and-management/overview.md)
 - [Test Feedback Loops](references/test-feedback-loops/overview.md)
 - [Test Automation Pyramid](references/test-automation-pyramid/overview.md)
 
-Workflow:
+**Workflow:**
 
 1. Identify repository root, language/framework stack, test runners, CI systems, naming conventions, and test layers.
 2. Inventory suite shape and test commands.
@@ -183,7 +183,7 @@ Workflow:
 4. Inspect CI and monitoring signals when available.
 5. Grade reliability, speed, signal, diagnostic value, maintainability, risk coverage, and monitoring.
 
-Output:
+**Output:**
 
 - Scope, stack, frameworks, CI, evidence inspected, and whether tests were run.
 - Overall grade and confidence.
