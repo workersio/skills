@@ -1,0 +1,15 @@
+{
+  "name": "workersio",
+  "description": "workers.io coding-agent skills and plugins",
+  "owner": {
+    "name": "workersio",
+    "url": "https://workers.io"
+  },
+  "plugins": [
+    {
+      "name": "wio",
+      "source": "./plugins/wio",
+      "description": "WIO testing workflows: scan, test, and doctor"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "wio",
+  "version": "0.1.0",
+  "description": "WIO testing workflows: scan, test, and doctor",
+  "author": {
+    "name": "workers.io"
+  },
+  "repository": "https://github.com/workersio/skills",
+  "license": "MIT"
+}
