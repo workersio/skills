@@ -6,38 +6,35 @@
 
 Most AI-written tests optimize for coverage. They assert implementation details, mock away the real risk, and pass even when the product breaks.
 
-This repository packages testing workflows that help agents write tests worth keeping: tests with clear behavior, strong oracles, realistic setup, useful failure signals, and an explicit reason to exist.
+WIO is one testing workflow skill with three commands: `$wio scan`, `$wio test`, and `$wio doctor`.
 
-> Quick start: install the standalone skills, then ask your agent to use `scan`, `test`, or `doctor`.
+## Structure
 
-## Why this exists
+WIO follows the same basic shape as Impeccable: one skill, command routing inside `SKILL.md`, and one shared reference tree.
 
-Good testing is a strategy problem before it is a code generation problem. The right test depends on product risk, failure mode, test level, assertion quality, fixture design, feedback loop, and maintenance cost.
+```text
+skills/wio/
+  SKILL.md
+  reference/
+    index.md
+    <topic>/
+      overview.md
+      tools.md
+```
 
-These workflows give your coding agent a shared testing vocabulary and a practical reference library for:
+There are no separate `scan`, `test`, or `doctor` skills. There is no plugin wrapper. There are no copied reference trees.
 
-- finding gaps in a test strategy
-- ranking high-value test candidates
-- writing focused regression, unit, integration, contract, and behavior tests
-- avoiding low-value coverage padding
-- diagnosing flaky, slow, noisy, or low-signal test suites
-- choosing when to use mocks, fixtures, property tests, fuzzing, mutation testing, security testing, or resilience testing
+## Commands
 
-## What’s included
-
-### Three workflows
-
-The package exposes three user-facing skills:
-
-| Skill | What it does |
+| Command | What it does |
 | --- | --- |
-| `scan` | Maps product behavior, existing tests, CI, and risk areas to find the highest-value tests to add next. |
-| `test` | Writes one focused test for a selected behavior, bug, code path, or regression risk. |
-| `doctor` | Audits test-suite health: weak assertions, flakes, excessive mocks, broad snapshots, slow feedback, skipped tests, and missing critical behavior coverage. |
+| `$wio scan [target]` | Maps product behavior, existing tests, CI, and risk areas to find the highest-value tests to add next. |
+| `$wio test [target]` | Writes one focused test for a selected behavior, bug, code path, or regression risk. |
+| `$wio doctor [target]` | Audits test-suite health: weak assertions, flakes, excessive mocks, broad snapshots, slow feedback, skipped tests, and missing critical behavior coverage. |
 
-### Testing strategy references
+## References
 
-The plugin source uses a shared reference library in `plugins/wio/references/`. Each exported standalone skill also vendors those references under its own `references/` directory because `npx skills add` copies skill folders independently.
+Detailed testing guidance lives only in `skills/wio/reference/`.
 
 Reference topics include:
 
@@ -52,63 +49,17 @@ Reference topics include:
 | Suite health | Finding flakes, weak signal, slow feedback, skipped tests, and CI blind spots. |
 | Advanced strategies | Static analysis, security testing, fuzzing, property-based testing, mutation testing, performance testing, resilience testing, and regression selection. |
 
-## Installation
-
-### Standalone skills
-
-Install from the workers.io skills repository:
-
-```bash
-npx skills add workersio/skills
-```
-
-This installs `scan`, `test`, and `doctor` as standalone skills, including their bundled `references/` directories.
-
-Then invoke one of the WIO workflows from your agent environment by asking for the skill:
+## Usage
 
 ```text
-Use scan to find the highest-value tests missing from this checkout flow.
-Use test to add one focused regression test for this billing eligibility bug.
-Use doctor to audit the current test suite.
+$wio scan checkout
+$wio test billing eligibility regression
+$wio doctor API test suite
 ```
 
-### Codex plugin source
+Use `scan` when you do not yet know what to test. Use `test` when the behavior or bug is known. Use `doctor` when an existing suite is hard to trust.
 
-The Codex plugin source lives in `plugins/wio` and exposes the same three skill entry points plus hooks and marketplace metadata.
-
-## Usage examples
-
-### Find test gaps
-
-```text
-Use scan to find the highest-value tests missing from this checkout flow.
-Use scan to review the auth module and tell me what is worth testing next.
-Use scan to look at this PR and identify the best regression tests to add.
-```
-
-Use this when you do not yet know what to test. The workflow inspects product context, code paths, current tests, fixtures, and CI before ranking candidates.
-
-### Write a focused test
-
-```text
-Use test to add a regression test for this billing eligibility bug.
-Use test to cover the tenant permission check without over-mocking it.
-Use test to add one focused test for this parser boundary case.
-```
-
-Use this when the behavior or bug is known. The workflow chooses the narrowest useful test level, preserves the real failure mechanism, validates with the smallest relevant command, and applies a `KEEP`, `REDO`, or `REMOVE` value gate.
-
-### Diagnose suite quality
-
-```text
-Use doctor to audit the current test suite.
-Use doctor to find the biggest reasons CI test failures are hard to trust.
-Use doctor to review test quality for the API package.
-```
-
-Use this when a suite is hard to trust. The workflow reports concrete evidence for weak assertions, flaky timing, brittle snapshots, excessive mocking, slow tests, skipped checks, CI gaps, and missing coverage of critical behavior.
-
-## What “good” means
+## What Good Means
 
 A generated or recommended test should answer:
 
@@ -121,20 +72,11 @@ A generated or recommended test should answer:
 
 If those answers are weak, the test should be redesigned or removed.
 
-## Supported tools
-
-WIO is packaged as a plugin for agent coding environments that support skills/plugins. The current manifests target:
-
-- Codex
-- Claude Code
-
-The workflows are intentionally small and portable: the same three entry points with bundled references for standalone skill installers.
-
 ## Contributing
 
-Keep the public surface area small: `scan`, `test`, and `doctor`.
+Keep the public surface area small: one skill, `wio`, with command modes `scan`, `test`, and `doctor`.
 
-Detailed testing guidance belongs in `plugins/wio/references/`, not duplicated inside workflow files. When adding a reference topic, add both `overview.md` and `tools.md`, link it from `plugins/wio/references/index.md`, then sync the exported copies under `plugins/wio/skills/{scan,test,doctor}/references/`.
+Detailed testing guidance belongs in `skills/wio/reference/`, not duplicated inside workflow files, plugin files, command adapters, cloud folders, sub-agents, or extra skill trees. When adding a reference topic, add both `overview.md` and `tools.md`, then link it from `skills/wio/reference/index.md`.
 
 The quality bar is simple: do not accept tests for coverage alone. A test should reduce real user risk, production risk, support load, debugging time, review time, or release risk.
 

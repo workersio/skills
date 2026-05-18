@@ -1,20 +1,18 @@
 # AGENTS.md
 
-This repository packages the `wio` testing workflow plugin for Codex and other coding agents.
+This repository packages the `wio` testing workflow skill for Codex and other coding agents.
 
 ## Canonical Paths
 
-- Plugin: `plugins/wio`
-- Skills: `plugins/wio/skills/{scan,test,doctor}/SKILL.md`
-- Codex plugin manifest: `plugins/wio/.codex-plugin/plugin.json`
-- Codex marketplace: `.agents/plugins/marketplace.json`
-- Canonical references: `plugins/wio/references/`
+- Skill: `skills/wio/SKILL.md`
+- References: `skills/wio/reference/`
 
 ## Maintenance Rules
 
 - Do not remove existing reference context.
-- Keep `SKILL.md` files concise and route detailed testing guidance through `plugins/wio/references/index.md`.
-- Keep plugin files as the source of truth; avoid repo-local command or agent adapters unless a host cannot load the plugin.
+- Keep `skills/wio/SKILL.md` concise and route detailed testing guidance through `skills/wio/reference/index.md`.
+- Keep `skills/wio` as the source of truth; avoid repo-local command, plugin, cloud, or sub-agent adapters unless a host cannot load the skill.
 - Keep test review strict: low-value tests should be marked `REDO` or `REMOVE`, not accepted for coverage.
-- When adding a reference topic, add both `overview.md` and `tools.md`, then link it from the plugin reference index.
-- The `npx skills add workersio/skills` installer copies each skill folder by itself. Keep `plugins/wio/skills/{scan,test,doctor}/references/` synced from `plugins/wio/references/` so installed standalone skills include their bundled resources.
+- When adding a reference topic, add both `overview.md` and `tools.md`, then link it from the WIO reference index.
+- Do not create separate `scan`, `test`, or `doctor` skills. They are command modes inside the single `wio` skill.
+- Do not duplicate references under plugin, cloud, Claude, command, or sub-agent folders.
