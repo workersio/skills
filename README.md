@@ -36,37 +36,12 @@ plugins/wio/
 
 There are no separate `scan`, `test`, `review`, or `doctor` skills, no symlinked skill copies, and no copied reference trees.
 
-## Install Surfaces
-
-WIO supports the official install surfaces for each host:
-
-| Host | Official shared install | Includes |
-| --- | --- | --- |
-| Codex | Codex plugin via `.agents/plugins/marketplace.json` and `plugins/wio/.codex-plugin/plugin.json` | Skill and plugin hook config. Codex plugin hooks require `plugin_hooks` to be enabled in the current release. |
-| Claude Code | Claude plugin via `.claude-plugin/marketplace.json` and `plugins/wio/.claude-plugin/plugin.json` | Skill, Claude subagents, and Claude plugin hook config. |
-| Agent skills installer | `npx skills add workersio/skills --skill wio` | Skill only: `SKILL.md`, `scripts/`, and `references/`. The installer discovers `plugins/wio/skills/wio` directly. |
-| Codex project config | `.codex/agents/` and `.codex/hooks.json` | Codex custom subagents and project hooks. Codex custom agents are not installed by `skills add`. |
-| Claude project config | `.claude/agents/` and `.claude/settings.json` | Project-local Claude agents and hooks for development or non-plugin use. |
-
-The repo-level marketplaces are:
-
-```text
-.agents/plugins/marketplace.json      # Codex marketplace
-.claude-plugin/marketplace.json       # Claude Code marketplace
-```
-
 ## Install
 
 Direct skill install:
 
 ```bash
 npx skills add workersio/skills
-```
-
-Claude Code plugin development:
-
-```bash
-claude --plugin-dir ./plugins/wio
 ```
 
 Claude Code marketplace install:
