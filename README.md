@@ -10,26 +10,14 @@ WIO is one testing workflow skill with four commands: `$wio scan`, `$wio test`, 
 
 ## Structure
 
-WIO follows the same basic shape as Impeccable: one skill, command routing inside `SKILL.md`, and one shared reference tree.
+WIO uses the standard agent skill shape: one skill, command routing inside `SKILL.md`, and one shared references tree.
 
 ```text
 skills/wio/
   SKILL.md
-  adapters/
-    subagents/
-      wio-candidate-scout.md
-      wio-strategy-critic.md
-      wio-test-reviewer.md
-    codex-agents/
-      wio-candidate-scout.toml
-      wio-strategy-critic.toml
-      wio-test-reviewer.toml
-    hooks/
-      test-review-reminder.py
-      test-review-reminder.hooks.json
   scripts/
-    activate-adapters.sh
-  reference/
+    test-review-reminder.py
+  references/
     index.md
     <topic>/
       overview.md
@@ -38,25 +26,27 @@ skills/wio/
 
 There are no separate `scan`, `test`, `review`, or `doctor` skills. There is no plugin wrapper. There are no copied reference trees.
 
-## Activation Links
+## Host Files
 
-The skill content lives in `skills/wio`. Host discovery paths are links or thin adapters:
+Runtime subagents and hooks live in the official host directories:
 
-| Host | Discovery path | Source |
-| --- | --- | --- |
-| Agent skills | `.agents/skills/wio` | Symlink to `skills/wio`. |
-| Claude Code subagents | `.claude/agents/wio-*.md` | Symlinks to `skills/wio/adapters/subagents/wio-*.md`. |
-| Claude Code hooks | `.claude/settings.json` | Symlink to `skills/wio/adapters/hooks/test-review-reminder.hooks.json`. |
-| Codex subagents | `.codex/agents/wio-*.toml` | Symlinks to thin TOML adapters in `skills/wio/adapters/codex-agents/`. |
-| Codex hooks | `.codex/hooks.json` | Symlink to `skills/wio/adapters/hooks/test-review-reminder.hooks.json`. |
+```text
+.claude/
+  agents/
+    wio-candidate-scout.md
+    wio-strategy-critic.md
+    wio-test-reviewer.md
+  settings.json
 
-Codex needs TOML custom-agent files, while Claude Code needs Markdown files with YAML frontmatter. The Codex TOML files are adapters only: they point back to the canonical Markdown specs and do not duplicate testing guidance.
-
-`npx skills add` installs the skill folder into `.agents/skills/wio`. It installs the canonical skill, adapters, script, hook file, and references, but it does not automatically register Claude or Codex subagents/hooks in host discovery paths. To activate those adapters in a project after install, run:
-
-```sh
-./.agents/skills/wio/scripts/activate-adapters.sh
+.codex/
+  agents/
+    wio-candidate-scout.toml
+    wio-strategy-critic.toml
+    wio-test-reviewer.toml
+  hooks.json
 ```
+
+`npx skills add workersio/skills --skill wio` installs the skill only. It does not install project-level Claude or Codex runtime config. To use subagents and hooks, copy or commit the `.claude/` and `.codex/` directories as project files.
 
 ## Commands
 
@@ -69,7 +59,7 @@ Codex needs TOML custom-agent files, while Claude Code needs Markdown files with
 
 ## Subagents
 
-WIO includes bundled subagent specs under `skills/wio/adapters/subagents/`:
+WIO includes project subagents in `.claude/agents/` and `.codex/agents/`:
 
 | Subagent | Role |
 | --- | --- |
@@ -79,15 +69,15 @@ WIO includes bundled subagent specs under `skills/wio/adapters/subagents/`:
 
 The main agent still writes the test. Subagents gather evidence, challenge the strategy, and review value. They do not duplicate reference content and they do not own the workflow.
 
-Claude Code project subagents are linked into `.claude/agents/`. Codex project subagents are linked into `.codex/agents/` as TOML adapters, because Codex discovers custom agents from `.codex/agents/*.toml`.
+Claude Code project subagents are Markdown files in `.claude/agents/`. Codex project subagents are TOML files in `.codex/agents/`.
 
 ## Hooks
 
-WIO hooks are optional host adapters. They should only remind the active agent to validate test changes and apply the WIO value gate. The hook JSON lives in `skills/wio/adapters/hooks/`; do not put WIO doctrine into hook bodies.
+WIO hooks are optional host config. They only remind the active agent to validate test changes and apply the WIO value gate. The executable hook logic lives in `skills/wio/scripts/test-review-reminder.py`.
 
 ## References
 
-Detailed testing guidance lives only in `skills/wio/reference/`.
+Detailed testing guidance lives only in `skills/wio/references/`.
 
 Reference topics include:
 
@@ -130,9 +120,9 @@ If those answers are weak, the test should be redesigned or removed.
 
 Keep the public surface area small: one skill, `wio`, with command modes `scan`, `test`, `review`, and `doctor`.
 
-Detailed testing guidance belongs in `skills/wio/reference/`, not duplicated inside workflow files, plugin files, command adapters, cloud folders, subagents, hooks, or extra skill trees. When adding a reference topic, add both `overview.md` and `tools.md`, then link it from `skills/wio/reference/index.md`.
+Detailed testing guidance belongs in `skills/wio/references/`, not duplicated inside workflow files, plugin files, cloud folders, subagents, hooks, or extra skill trees. When adding a reference topic, add both `overview.md` and `tools.md`, then link it from `skills/wio/references/index.md`.
 
-Host-specific adapters must stay generated or documented from this source:
+Host-specific files must stay minimal and point back to WIO:
 
 - Claude Code subagents: project files live in `.claude/agents/` per the official Claude Code subagents docs.
 - Claude Code hooks: project hook configuration lives in `.claude/settings.json` per the official Claude Code hooks docs.

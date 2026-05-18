@@ -21,12 +21,12 @@ Commands are accessed through `$wio`:
 
 | Command | What it does | Start with |
 | --- | --- | --- |
-| `$wio scan [target]` | Find the highest-value test candidates for a codebase, change, or scope. | [Behavior To Test Map](reference/behavior-to-test-map/overview.md), [Risk-Based Testing](reference/risk-based-testing/overview.md), [User Behavior Testing](reference/user-behavior-testing/overview.md), [Test Level Selection](reference/test-level-selection/overview.md) |
-| `$wio test [target]` | Run the full test workflow: discover candidate, pick strategy, write test, validate, review, and keep only if valuable. | [Behavior To Test Map](reference/behavior-to-test-map/overview.md), [Risk-Based Testing](reference/risk-based-testing/overview.md), [Test Level Selection](reference/test-level-selection/overview.md), [Test Oracles And Assertions](reference/test-oracles-and-assertions/overview.md), [Test Data And Fixtures](reference/test-data-and-fixtures/overview.md), [Mocking And Test Doubles](reference/mocking-and-test-doubles/overview.md), [Test Feedback Loops](reference/test-feedback-loops/overview.md) |
-| `$wio review [target]` | Review a test for meaningful customer or developer value and return `KEEP`, `REDO`, or `REMOVE`. | [Test Oracles And Assertions](reference/test-oracles-and-assertions/overview.md), [Test Data And Fixtures](reference/test-data-and-fixtures/overview.md), [Mocking And Test Doubles](reference/mocking-and-test-doubles/overview.md), [Test Feedback Loops](reference/test-feedback-loops/overview.md), [Mutation Testing](reference/mutation-testing/overview.md) |
-| `$wio doctor [target]` | Diagnose test-suite health problems in a codebase or scope. | [Test Suite Health Diagnostics](reference/test-suite-health-diagnostics/overview.md), [Flaky Test Detection and Management](reference/flaky-test-detection-and-management/overview.md), [Test Feedback Loops](reference/test-feedback-loops/overview.md), [Test Automation Pyramid](reference/test-automation-pyramid/overview.md) |
+| `$wio scan [target]` | Find the highest-value test candidates for a codebase, change, or scope. | [Behavior To Test Map](references/behavior-to-test-map/overview.md), [Risk-Based Testing](references/risk-based-testing/overview.md), [User Behavior Testing](references/user-behavior-testing/overview.md), [Test Level Selection](references/test-level-selection/overview.md) |
+| `$wio test [target]` | Run the full test workflow: discover candidate, pick strategy, write test, validate, review, and keep only if valuable. | [Behavior To Test Map](references/behavior-to-test-map/overview.md), [Risk-Based Testing](references/risk-based-testing/overview.md), [Test Level Selection](references/test-level-selection/overview.md), [Test Oracles And Assertions](references/test-oracles-and-assertions/overview.md), [Test Data And Fixtures](references/test-data-and-fixtures/overview.md), [Mocking And Test Doubles](references/mocking-and-test-doubles/overview.md), [Test Feedback Loops](references/test-feedback-loops/overview.md) |
+| `$wio review [target]` | Review a test for meaningful customer or developer value and return `KEEP`, `REDO`, or `REMOVE`. | [Test Oracles And Assertions](references/test-oracles-and-assertions/overview.md), [Test Data And Fixtures](references/test-data-and-fixtures/overview.md), [Mocking And Test Doubles](references/mocking-and-test-doubles/overview.md), [Test Feedback Loops](references/test-feedback-loops/overview.md), [Mutation Testing](references/mutation-testing/overview.md) |
+| `$wio doctor [target]` | Diagnose test-suite health problems in a codebase or scope. | [Test Suite Health Diagnostics](references/test-suite-health-diagnostics/overview.md), [Flaky Test Detection and Management](references/flaky-test-detection-and-management/overview.md), [Test Feedback Loops](references/test-feedback-loops/overview.md), [Test Automation Pyramid](references/test-automation-pyramid/overview.md) |
 
-Use [reference/index.md](reference/index.md) as the reference map. Load only the reference files needed for the current decision.
+Use [references/index.md](references/index.md) as the reference map. Load only the reference files needed for the current decision.
 
 ## Command Selection
 
@@ -53,13 +53,13 @@ If the user explicitly names a WIO command, follow that mode. If the command is 
 
 ## Subagent Workflow
 
-When the host supports subagents or parallel agents, use the WIO subagent specs in [adapters/subagents/](adapters/subagents/) to improve quality without duplicating guidance:
+When the host supports subagents or parallel agents, use the WIO subagent specs in `.claude/agents/` or `.codex/agents/` to improve quality without duplicating guidance:
 
 - `wio-candidate-scout`: read-only discovery of high-value test candidates and real risk.
 - `wio-strategy-critic`: read-only challenge of the chosen test level, oracle, doubles, fixtures, and validation loop before implementation.
 - `wio-test-reviewer`: post-implementation review that returns `KEEP`, `REDO`, or `REMOVE`.
 
-Subagents must read only targeted files and targeted WIO references. They return findings to the main agent; they do not write reports or copy reference content. Host activation files live under [adapters/](adapters/) only so installers that copy the `wio` skill include them.
+Subagents must read only targeted files and targeted WIO references. They return findings to the main agent; they do not write reports or copy reference content. Project subagent definitions, when present, live in official host directories: `.claude/agents/` and `.codex/agents/`.
 
 For `$wio test`, use this sequence:
 
@@ -78,11 +78,11 @@ Find the best parts to test next, the right strategy for each, and the ROI of te
 
 Start with:
 
-- [Behavior To Test Map](reference/behavior-to-test-map/overview.md)
-- [Risk-Based Testing](reference/risk-based-testing/overview.md)
-- [User Behavior Testing](reference/user-behavior-testing/overview.md)
-- [Test Level Selection](reference/test-level-selection/overview.md)
-- [Testing References Index](reference/index.md)
+- [Behavior To Test Map](references/behavior-to-test-map/overview.md)
+- [Risk-Based Testing](references/risk-based-testing/overview.md)
+- [User Behavior Testing](references/user-behavior-testing/overview.md)
+- [Test Level Selection](references/test-level-selection/overview.md)
+- [Testing References Index](references/index.md)
 
 Workflow:
 
@@ -106,12 +106,12 @@ Write tests only when they protect meaningful behavior. A useful test reduces fu
 
 Start with:
 
-- [Test Level Selection](reference/test-level-selection/overview.md)
-- [Test Oracles And Assertions](reference/test-oracles-and-assertions/overview.md)
-- [Test Data And Fixtures](reference/test-data-and-fixtures/overview.md)
-- [Mocking And Test Doubles](reference/mocking-and-test-doubles/overview.md)
-- [Test Feedback Loops](reference/test-feedback-loops/overview.md)
-- [Testing References Index](reference/index.md)
+- [Test Level Selection](references/test-level-selection/overview.md)
+- [Test Oracles And Assertions](references/test-oracles-and-assertions/overview.md)
+- [Test Data And Fixtures](references/test-data-and-fixtures/overview.md)
+- [Mocking And Test Doubles](references/mocking-and-test-doubles/overview.md)
+- [Test Feedback Loops](references/test-feedback-loops/overview.md)
+- [Testing References Index](references/index.md)
 
 Workflow:
 
@@ -140,12 +140,12 @@ Review a test as a quality gate, not as a rubber stamp. The test must justify it
 
 Start with:
 
-- [Test Oracles And Assertions](reference/test-oracles-and-assertions/overview.md)
-- [Test Data And Fixtures](reference/test-data-and-fixtures/overview.md)
-- [Mocking And Test Doubles](reference/mocking-and-test-doubles/overview.md)
-- [Test Feedback Loops](reference/test-feedback-loops/overview.md)
-- [Mutation Testing](reference/mutation-testing/overview.md)
-- [Testing References Index](reference/index.md)
+- [Test Oracles And Assertions](references/test-oracles-and-assertions/overview.md)
+- [Test Data And Fixtures](references/test-data-and-fixtures/overview.md)
+- [Mocking And Test Doubles](references/mocking-and-test-doubles/overview.md)
+- [Test Feedback Loops](references/test-feedback-loops/overview.md)
+- [Mutation Testing](references/mutation-testing/overview.md)
+- [Testing References Index](references/index.md)
 
 Workflow:
 
@@ -170,10 +170,10 @@ Run a read-only test-suite health scan and report likely concerns with evidence.
 
 Start with:
 
-- [Test Suite Health Diagnostics](reference/test-suite-health-diagnostics/overview.md)
-- [Flaky Test Detection and Management](reference/flaky-test-detection-and-management/overview.md)
-- [Test Feedback Loops](reference/test-feedback-loops/overview.md)
-- [Test Automation Pyramid](reference/test-automation-pyramid/overview.md)
+- [Test Suite Health Diagnostics](references/test-suite-health-diagnostics/overview.md)
+- [Flaky Test Detection and Management](references/flaky-test-detection-and-management/overview.md)
+- [Test Feedback Loops](references/test-feedback-loops/overview.md)
+- [Test Automation Pyramid](references/test-automation-pyramid/overview.md)
 
 Workflow:
 

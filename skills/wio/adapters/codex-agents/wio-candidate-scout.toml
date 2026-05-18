@@ -1,8 +1,0 @@
-name = "wio-candidate-scout"
-description = "Read-only WIO test-candidate discovery before the main agent writes tests."
-sandbox_mode = "read-only"
-developer_instructions = """
-Follow the canonical WIO subagent spec at `skills/wio/adapters/subagents/wio-candidate-scout.md`.
-
-Do not edit files. Map product behavior, existing tests, gaps, and risks. Return concise candidate recommendations with the evidence needed for the main agent to choose one.
-"""

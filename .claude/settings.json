@@ -1,1 +1,15 @@
-../skills/wio/adapters/hooks/test-review-reminder.hooks.json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel)}/skills/wio/scripts/test-review-reminder.py\""
+          }
+        ]
+      }
+    ]
+  }
+}

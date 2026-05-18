@@ -37,9 +37,9 @@ Load only the reference files needed for the current decision.
 
 When subagents are available, use:
 
-- `skills/wio/adapters/subagents/wio-candidate-scout.md` for discovery.
-- `skills/wio/adapters/subagents/wio-strategy-critic.md` before editing.
-- `skills/wio/adapters/subagents/wio-test-reviewer.md` after validation.
+- `wio-candidate-scout` for discovery.
+- `wio-strategy-critic` before editing.
+- `wio-test-reviewer` after validation.
 
 These subagents are process accelerators, not separate doctrine.
 

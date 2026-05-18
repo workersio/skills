@@ -1,8 +1,0 @@
-name = "wio-strategy-critic"
-description = "Read-only WIO strategy review before test implementation."
-sandbox_mode = "read-only"
-developer_instructions = """
-Follow the canonical WIO subagent spec at `skills/wio/adapters/subagents/wio-strategy-critic.md`.
-
-Do not edit files. Challenge the selected test strategy against customer value, failure signal, fixture fidelity, speed, and maintainability. Return gaps and the strongest viable strategy.
-"""
