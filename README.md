@@ -213,17 +213,6 @@ Host-specific files must stay minimal and point back to WIO:
 - Codex subagents: project custom agents live in `.codex/agents/*.toml` per the official Codex subagents docs.
 - Codex hooks: project hooks can live in `.codex/hooks.json` per the official Codex hooks docs.
 
-References:
-
-- Claude Code subagents: https://code.claude.com/docs/en/sub-agents
-- Claude Code hooks: https://code.claude.com/docs/en/hooks
-- Claude Code plugins: https://code.claude.com/docs/en/plugins
-- Claude Code plugin marketplaces: https://code.claude.com/docs/en/plugin-marketplaces
-- Codex plugins: https://developers.openai.com/codex/plugins/build
-- Codex skills: https://developers.openai.com/codex/skills
-- Codex subagents: https://developers.openai.com/codex/subagents
-- Codex hooks: https://developers.openai.com/codex/hooks
-
 The quality bar is simple: do not accept tests for coverage alone. A test should reduce real user risk, production risk, support load, debugging time, review time, or release risk.
 
 ## License
