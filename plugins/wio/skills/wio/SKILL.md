@@ -53,13 +53,13 @@ If the user explicitly names a WIO command, follow that mode. If the command is 
 
 ## Subagent Workflow
 
-When the host supports subagents or parallel agents, use the WIO subagent specs in `.claude/agents/` or `.codex/agents/` to improve quality without duplicating guidance:
+When the host supports subagents or parallel agents, use the WIO subagent specs from the official host locations to improve quality without duplicating guidance:
 
 - `wio-candidate-scout`: read-only discovery of high-value test candidates and real risk.
 - `wio-strategy-critic`: read-only challenge of the chosen test level, oracle, doubles, fixtures, and validation loop before implementation.
 - `wio-test-reviewer`: post-implementation review that returns `KEEP`, `REDO`, or `REMOVE`.
 
-Subagents must read only targeted files and targeted WIO references. They return findings to the main agent; they do not write reports or copy reference content. Project subagent definitions, when present, live in official host directories: `.claude/agents/` and `.codex/agents/`.
+Subagents must read only targeted files and targeted WIO references. They return findings to the main agent; they do not write reports or copy reference content. Claude plugin subagents live in `plugins/wio/agents/`; Claude project subagents can live in `.claude/agents/`; Codex custom agents live in `.codex/agents/`. Installing WIO with `skills add` does not create those runtime files.
 
 For `$wio test`, use this sequence:
 

@@ -1,0 +1,24 @@
+{
+  "name": "workersio-skills",
+  "owner": {
+    "name": "workers.io"
+  },
+  "description": "Workers.io agent skills and plugins.",
+  "plugins": [
+    {
+      "name": "wio",
+      "source": "./plugins/wio",
+      "description": "Testing workflow skill for high-value test discovery, strategy, implementation, review, and suite health diagnostics.",
+      "version": "0.1.0",
+      "author": {
+        "name": "workers.io"
+      },
+      "category": "Productivity",
+      "tags": [
+        "testing",
+        "quality",
+        "skills"
+      ]
+    }
+  ]
+}

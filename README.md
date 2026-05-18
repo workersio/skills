@@ -10,43 +10,85 @@ WIO is one testing workflow skill with four commands: `$wio scan`, `$wio test`, 
 
 ## Structure
 
-WIO uses the standard agent skill shape: one skill, command routing inside `SKILL.md`, and one shared references tree.
+WIO uses one skill, command routing inside `SKILL.md`, and one shared references tree. The canonical source lives inside the plugin so plugin installs and direct skill installs do not drift:
 
 ```text
-skills/wio/
-  SKILL.md
-  scripts/
-    test-review-reminder.py
-  references/
-    index.md
-    <topic>/
-      overview.md
-      tools.md
-```
-
-There are no separate `scan`, `test`, `review`, or `doctor` skills. There is no plugin wrapper. There are no copied reference trees.
-
-## Host Files
-
-Runtime subagents and hooks live in the official host directories:
-
-```text
-.claude/
+plugins/wio/
+  .codex-plugin/plugin.json
+  .claude-plugin/plugin.json
+  skills/
+    wio/
+      SKILL.md
+      scripts/
+        test-review-reminder.py
+      references/
+        index.md
+        <topic>/
+          overview.md
+          tools.md
   agents/
     wio-candidate-scout.md
     wio-strategy-critic.md
     wio-test-reviewer.md
-  settings.json
-
-.codex/
-  agents/
-    wio-candidate-scout.toml
-    wio-strategy-critic.toml
-    wio-test-reviewer.toml
-  hooks.json
+  hooks/
+    hooks.json
 ```
 
-`npx skills add workersio/skills --skill wio` installs the skill only. It does not install project-level Claude or Codex runtime config. To use subagents and hooks, copy or commit the `.claude/` and `.codex/` directories as project files.
+There are no separate `scan`, `test`, `review`, or `doctor` skills, no symlinked skill copies, and no copied reference trees.
+
+## Official Install Surfaces
+
+WIO supports the official install surfaces for each host:
+
+| Host | Official shared install | Includes |
+| --- | --- | --- |
+| Codex | Codex plugin via `.agents/plugins/marketplace.json` and `plugins/wio/.codex-plugin/plugin.json` | Skill and plugin hook config. Codex plugin hooks require `plugin_hooks` to be enabled in the current release. |
+| Claude Code | Claude plugin via `.claude-plugin/marketplace.json` and `plugins/wio/.claude-plugin/plugin.json` | Skill, Claude subagents, and Claude plugin hook config. |
+| Agent skills installer | `npx skills add workersio/skills --skill wio` | Skill only: `SKILL.md`, `scripts/`, and `references/`. The installer discovers `plugins/wio/skills/wio` directly. |
+| Codex project config | `.codex/agents/` and `.codex/hooks.json` | Codex custom subagents and project hooks. Codex custom agents are not installed by `skills add`. |
+| Claude project config | `.claude/agents/` and `.claude/settings.json` | Project-local Claude agents and hooks for development or non-plugin use. |
+
+The repo-level marketplaces are:
+
+```text
+.agents/plugins/marketplace.json      # Codex marketplace
+.claude-plugin/marketplace.json       # Claude Code marketplace
+```
+
+## Install
+
+Direct skill install:
+
+```bash
+npx skills add workersio/skills --skill wio
+```
+
+Claude Code plugin development:
+
+```bash
+claude --plugin-dir ./plugins/wio
+```
+
+Claude Code marketplace install:
+
+```text
+/plugin marketplace add workersio/skills
+/plugin install wio@workersio-skills
+```
+
+Codex marketplace add:
+
+```bash
+codex plugin marketplace add workersio/skills
+```
+
+For local Codex plugin testing, add this checkout as the marketplace root:
+
+```bash
+codex plugin marketplace add .
+```
+
+Codex custom subagents still need project config in `.codex/agents/`, because Codex custom agents are loaded from `.codex/agents/` or `~/.codex/agents/`.
 
 ## Commands
 
@@ -59,7 +101,7 @@ Runtime subagents and hooks live in the official host directories:
 
 ## Subagents
 
-WIO includes project subagents in `.claude/agents/` and `.codex/agents/`:
+WIO includes three focused subagents:
 
 | Subagent | Role |
 | --- | --- |
@@ -69,15 +111,24 @@ WIO includes project subagents in `.claude/agents/` and `.codex/agents/`:
 
 The main agent still writes the test. Subagents gather evidence, challenge the strategy, and review value. They do not duplicate reference content and they do not own the workflow.
 
-Claude Code project subagents are Markdown files in `.claude/agents/`. Codex project subagents are TOML files in `.codex/agents/`.
+Claude plugin subagents live in `plugins/wio/agents/`, which is the official Claude plugin location. Project-local Claude subagents can also be copied to `.claude/agents/` when a repo is not using the plugin.
+
+Codex project subagents live in `.codex/agents/*.toml`, which is the official Codex custom-agent location.
 
 ## Hooks
 
-WIO hooks are optional host config. They only remind the active agent to validate test changes and apply the WIO value gate. The executable hook logic lives in `skills/wio/scripts/test-review-reminder.py`.
+WIO hooks only remind the active agent to validate test changes and apply the WIO value gate. The executable hook logic lives in `plugins/wio/skills/wio/scripts/test-review-reminder.py`.
+
+Hook config exists in the official locations:
+
+- Claude plugin hook: `plugins/wio/hooks/hooks.json`
+- Claude project hook: `.claude/settings.json`
+- Codex plugin hook: `plugins/wio/hooks/hooks.json`
+- Codex project hook: `.codex/hooks.json`
 
 ## References
 
-Detailed testing guidance lives only in `skills/wio/references/`.
+Detailed testing guidance lives only in `plugins/wio/skills/wio/references/`.
 
 Reference topics include:
 
@@ -120,12 +171,14 @@ If those answers are weak, the test should be redesigned or removed.
 
 Keep the public surface area small: one skill, `wio`, with command modes `scan`, `test`, `review`, and `doctor`.
 
-Detailed testing guidance belongs in `skills/wio/references/`, not duplicated inside workflow files, plugin files, cloud folders, subagents, hooks, or extra skill trees. When adding a reference topic, add both `overview.md` and `tools.md`, then link it from `skills/wio/references/index.md`.
+Detailed testing guidance belongs in `plugins/wio/skills/wio/references/`, not duplicated inside workflow files, cloud folders, subagents, hooks, or extra skill trees. When adding a reference topic, add both `overview.md` and `tools.md`, then link it from `plugins/wio/skills/wio/references/index.md`.
 
 Host-specific files must stay minimal and point back to WIO:
 
-- Claude Code subagents: project files live in `.claude/agents/` per the official Claude Code subagents docs.
-- Claude Code hooks: project hook configuration lives in `.claude/settings.json` per the official Claude Code hooks docs.
+- Claude Code plugins: shared install packages live in `plugins/wio/` with `.claude-plugin/plugin.json`, root-level `skills/`, `agents/`, and `hooks/`.
+- Claude Code marketplace: `.claude-plugin/marketplace.json`.
+- Codex plugins: shared install packages live in `plugins/wio/` with `.codex-plugin/plugin.json`, root-level `skills/`, and `hooks/`.
+- Codex marketplace: `.agents/plugins/marketplace.json`.
 - Codex subagents: project custom agents live in `.codex/agents/*.toml` per the official Codex subagents docs.
 - Codex hooks: project hooks can live in `.codex/hooks.json` per the official Codex hooks docs.
 
@@ -133,6 +186,10 @@ References:
 
 - Claude Code subagents: https://code.claude.com/docs/en/sub-agents
 - Claude Code hooks: https://code.claude.com/docs/en/hooks
+- Claude Code plugins: https://code.claude.com/docs/en/plugins
+- Claude Code plugin marketplaces: https://code.claude.com/docs/en/plugin-marketplaces
+- Codex plugins: https://developers.openai.com/codex/plugins/build
+- Codex skills: https://developers.openai.com/codex/skills
 - Codex subagents: https://developers.openai.com/codex/subagents
 - Codex hooks: https://developers.openai.com/codex/hooks
 

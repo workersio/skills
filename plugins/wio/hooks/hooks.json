@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel)}/plugins/wio/skills/wio/scripts/test-review-reminder.py\""
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/skills/wio/scripts/test-review-reminder.py\""
           }
         ]
       }

@@ -1,0 +1,39 @@
+{
+  "name": "wio",
+  "version": "0.1.0",
+  "description": "Testing workflow skill for high-value test discovery, strategy, implementation, review, and suite health diagnostics.",
+  "author": {
+    "name": "workers.io",
+    "url": "https://github.com/workersio"
+  },
+  "homepage": "https://github.com/workersio/skills",
+  "repository": "https://github.com/workersio/skills",
+  "license": "MIT",
+  "keywords": [
+    "testing",
+    "tests",
+    "quality",
+    "codex",
+    "skills"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "WIO",
+    "shortDescription": "Write and review high-value tests, not coverage padding.",
+    "longDescription": "WIO adds a testing workflow for discovering valuable test candidates, choosing the right strategy, writing focused tests, reviewing test value, and diagnosing suite health.",
+    "developerName": "workers.io",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/workersio/skills",
+    "defaultPrompt": [
+      "$wio scan checkout",
+      "$wio test billing eligibility regression",
+      "$wio doctor API test suite"
+    ],
+    "brandColor": "#2563EB"
+  }
+}

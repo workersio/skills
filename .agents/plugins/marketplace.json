@@ -1,0 +1,20 @@
+{
+  "name": "workersio-skills",
+  "interface": {
+    "displayName": "Workers.io Skills"
+  },
+  "plugins": [
+    {
+      "name": "wio",
+      "source": {
+        "source": "local",
+        "path": "./plugins/wio"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
