@@ -35,12 +35,15 @@ Design workloads that exercise important user sessions, API/client behavior, ope
 | Background-job flow | Queues, schedules, retries, idempotency, fanout, and eventual terminal states. |
 | Load profile | Realistic traffic mix, payloads, think time, concurrency, and pass/fail thresholds. |
 | Stateful/property sequence | Many valid operation sequences with invariants checked after each step. |
+| Safety simulation | Fault-heavy run that checks forbidden states never occur under adverse scheduling, network, storage, or dependency behavior. |
+| Liveness simulation | Run that first creates adversity, then restores a healthy core or dependency condition and checks bounded progress. |
 | Synthetic monitor | Production-like smoke path that verifies critical availability and contract outcomes. |
 
 ## Variance Rules
 
 - Use bounded ranges and weighted choices, not arbitrary randomness.
 - Record seed and generated scenario summary on every run.
+- Persist derived structured cases, command sequences, or trace predicates when a seed alone would not replay meaningfully across code or generator changes.
 - Keep the task goal stable even when inputs and branch choices vary.
 - Include known edge classes deliberately; do not rely on randomness to discover obvious boundaries.
 - Shrink or capture failing cases into deterministic regression tests when possible.
@@ -60,6 +63,7 @@ Use these classes to turn a realistic session into a bug-finding workload. Pick 
 | Dependency faults | Timeout, 429/500, partial response, stale cache, duplicate delivery, slow provider. | Fallback/retry limits, no corruption, recovery outcome, diagnosable failure artifact. |
 | Recovery and cleanup | Crash/resume, rollback, abandoned session, cleanup job, interrupted upload. | Resources released, invariant restored, user-visible recovery path, no orphaned state. |
 | Error handling | Validation failure, non-fatal provider error, rejected event, failed cleanup, partial commit. | Specific error semantics, no swallowed failure, no corrupt state, cleanup/audit signal. |
+| Safety vs liveness | Safety faults keep happening; liveness faults stop for a healthy core while non-core faults may remain permanent. | Safety invariant never violated; bounded progress eventually happens under stated recovery assumptions. |
 
 ## Assertion And Invariant Design
 
@@ -70,6 +74,7 @@ Use these classes to turn a realistic session into a bug-finding workload. Pick 
 - Avoid workloads that only assert completion, status 200, object existence, or absence of thrown errors unless the workload is explicitly a smoke check.
 - For stateful workloads, prefer a simple model, ledger, or state machine that is independent from the implementation under test.
 - Record enough failure artifacts to diagnose which step, seed, branch, input, or invariant failed.
+- For interactive randomized workloads, record key state predicates or command sequences, not only raw random bytes, when that makes regression replay more robust.
 - Check both sides of important boundaries: accepted/rejected input, allowed/denied action, before/after persistence, enqueue/dequeue, retry/replay, and dependency failure/recovery.
 
 ## Falsification Gate
@@ -80,7 +85,8 @@ Before proposing or keeping a workload, answer all of these:
 2. Which assertion or invariant fails for that bug?
 3. Does the workload preserve the real failure mechanism, or did mocks/setup remove it?
 4. Can the failure be replayed from a seed, generated input summary, artifact, or deterministic command?
-5. If the workload is high-level, what narrower regression test should capture a minimized failing case?
+5. If the workload is randomized, is the replay artifact durable enough for this repo: seed only, seed plus commit, derived structured input, command sequence, or trace predicates?
+6. If the workload is high-level, what narrower regression test should capture a minimized failing case?
 
 If the answers are vague, redesign the workload before implementation.
 
@@ -101,6 +107,7 @@ If the answers are vague, redesign the workload before implementation.
 - Add adversarial classes deliberately and tie each one to a risk.
 - Bound generated work, retries, queues, payload sizes, and concurrency so failures are diagnosable rather than runaway.
 - Make failure replay deterministic.
+- Separate safety and liveness goals when faults are involved; do not let a safety-mode workload hide missing progress checks.
 - Check that at least one plausible bug would fail a named assertion or invariant.
 - Validate in a safe environment and record residual risk.
 
@@ -111,4 +118,6 @@ If the answers are vague, redesign the workload before implementation.
 - Locust, [writing a locustfile](https://docs.locust.io/en/stable/writing-a-locustfile.html)
 - Hypothesis, [stateful testing](https://hypothesis.readthedocs.io/en/latest/stateful.html)
 - TigerBeetle, [TigerStyle](https://github.com/tigerbeetle/tigerbeetle/blob/main/docs/TIGER_STYLE.md)
+- TigerBeetle, [Simulation Testing For Liveness](https://tigerbeetle.com/blog/2023-07-06-simulation-testing-for-liveness/)
+- TigerBeetle, [Random Fuzzy Thoughts](https://tigerbeetle.com/blog/2023-03-28-random-fuzzy-thoughts/)
 - Google SRE, [Addressing Cascading Failures](https://sre.google/sre-book/addressing-cascading-failures/)

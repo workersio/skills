@@ -27,6 +27,9 @@ Reduce missed edge cases in deterministic logic where important correctness can 
 ### Test Design Principles
 - Properties must be stronger than implementation restatement.
 - Generators should produce valid, interesting data often enough to exercise the behavior.
+- Inspect generator distribution; a generator can be deterministic and reproducible while still missing the risky shape of the input space.
+- When the state space is small, prefer exhaustive enumeration over random sampling.
+- Use swarm-style weighted operation mixes for stateful systems so different runs stress different subsets of actions.
 - Shrinking is valuable only when failures remain reproducible.
 - Combine examples with properties; examples communicate intent and cover named business cases.
 - Avoid asserting the same algorithm in the oracle that production uses.
@@ -34,6 +37,7 @@ Reduce missed edge cases in deterministic logic where important correctness can 
 ### Good Test Characteristics
 - Properties describe externally visible invariants.
 - Seeds and failing examples are recorded.
+- For structured generated data, replay stores either the derived structured case or the commit/generator version needed to interpret the seed.
 - Invalid and boundary inputs are generated deliberately when relevant.
 - Failures shrink to understandable cases and become regression examples.
 - The test isolates nondeterminism and side effects.
@@ -42,6 +46,7 @@ Reduce missed edge cases in deterministic logic where important correctness can 
 - Generated tests only assert no exception for business-critical logic that needs semantic properties.
 - The oracle duplicates production logic.
 - Generators mostly create irrelevant data.
+- Generators create only easy shapes, such as sorted, consecutive, aligned, or single-cluster data, while the bug requires gaps, overlaps, skew, or unusual ordering.
 - Random failures are not reproducible.
 - Properties are so broad they hide which requirement failed.
 
@@ -49,6 +54,7 @@ Reduce missed edge cases in deterministic logic where important correctness can 
 - Start with concrete examples and intended behavior.
 - Name the invariant or metamorphic relation.
 - Design generators for valid, boundary, and invalid inputs as appropriate.
+- Inspect and, when useful, print or sample generator distribution before trusting the property.
 - Implement the property with deterministic dependencies.
 - Run with recorded seed and reasonable case count locally.
 - Promote minimized failures into ordinary regression tests when useful.
@@ -106,6 +112,8 @@ Generator quality controls test value. Biased generators may never reach the ris
 
 Shrinking is powerful but not free. Complex generators can make shrinking slow or produce counterexamples that are still hard to interpret. Stateful PBT has higher setup cost: teams must define commands, preconditions, postconditions, cleanup, and a model. Random testing is also not exhaustive; passing a property means no counterexample was found under the configured search, not that the property is proven.
 
+Seeds are only durable replay artifacts when the generator and code revision are stable. For long-lived regression cases, record the minimized structured input, command sequence, or trace predicates in addition to the seed when the generated shape matters.
+
 ## Signals
 
 ### Good Signs
@@ -113,6 +121,7 @@ Shrinking is powerful but not free. Complex generators can make shrinking slow o
 * Failures shrink to small, understandable counterexamples.
 * Properties find edge cases that example tests missed.
 * Generated inputs cover meaningful domain classes, not just trivial values.
+* Small finite domains are enumerated instead of sampled.
 * Properties read like domain rules or API contracts.
 * Counterexamples become regression tests or seeded replay cases.
 
@@ -121,6 +130,7 @@ Shrinking is powerful but not free. Complex generators can make shrinking slow o
 * Most generated cases are discarded by assumptions or filters.
 * Properties restate the implementation instead of the specification.
 * Tests are flaky because time, concurrency, I/O, or shared state is uncontrolled.
+* A passing property relies on a generator whose distribution has never been inspected.
 * The main response to failures is “increase the run count” rather than improve the property or generator.
 * CI time grows while failures are rare, vague, or not actionable.
 
@@ -133,6 +143,10 @@ JSON or protocol round trip: Generate valid domain objects, serialize them, pars
 Key-value store state machine: Model expected state as an in-memory map. Generate sequences of put, delete, and get. After each operation, compare the real store result with the model. Reset the store per test run.
 
 Migration differential test: Generate inputs accepted by both old and new code. Assert equivalent outputs. For intentional changes, encode the compatibility boundary explicitly instead of weakening the assertion globally.
+
+Finite state space: If valid values are all permutations, enum combinations, or small bounded route sets, enumerate every value before relying on random sampling.
+
+Swarm stateful test: Randomly choose operation weights per run, then execute many steps against both implementation and model. This stresses action subsets that a fixed uniform distribution might under-sample.
 
 ## Packages And Libraries
 

@@ -28,6 +28,9 @@ Reduce robustness and security risk in code that processes untrusted, malformed,
 - A fuzz target should be small, deterministic, fast, and side-effect controlled.
 - The oracle can be crash-free execution, sanitizer cleanliness, parse/serialize invariant, resource bound, or business invariant.
 - Seed corpora should include real and boundary examples, not only random bytes.
+- Prefer targeted subsystem fuzzers in addition to whole-system fuzzing; broad simulations can miss deep states or make precise assertions hard.
+- Design minimal fuzzable interfaces early. Remove accidental dependencies and expose the essential input/output transformation so the fuzzer reaches meaningful states quickly.
+- Cover positive and negative space separately: valid inputs should round trip or preserve semantics; invalid encodings should reject loudly and never silently misinterpret data.
 - Crashes become regression tests by adding minimized inputs.
 - Continuous fuzzing needs ownership, deduplication, minimization, and triage.
 
@@ -35,6 +38,8 @@ Reduce robustness and security risk in code that processes untrusted, malformed,
 - Harnesses isolate one input boundary and reset state each run.
 - Sanitizers or runtime checks are enabled where supported.
 - Timeouts and resource limits catch hangs and pathological inputs.
+- Generated-input distribution is inspected so structured generators do not create blind spots.
+- Exact or model-based checks are used when count-only or subset checks can miss missing or extra results.
 - Crashes are minimized, stored, and replayed in deterministic tests.
 - Short PR fuzz runs are paired with longer scheduled campaigns for high-risk code.
 
@@ -43,6 +48,7 @@ Reduce robustness and security risk in code that processes untrusted, malformed,
 - The target writes to shared databases or external services.
 - Crashes are ignored because they are “just fuzz input.”
 - Generated inputs never reach parser states because no seed corpus exists.
+- Structured generation accidentally avoids the hard case, such as always producing consecutive records, aligned ranges, or easy orderings.
 - Fuzzing is claimed as security coverage for authorization or business logic without a relevant oracle.
 
 ### Execution Pattern
@@ -111,7 +117,9 @@ For deterministic business invariants over valid data, property-based testing ma
 | Problem | Better Design |
 | --- | --- |
 | Target starts a server, browser, database, or real payment system per input. | Fuzz the parser, validator, request decoder, or policy decision below the full workflow. |
+| Whole-system fuzzing reaches the target only through narrow production usage. | Add a targeted subsystem fuzzer with a minimal interface and direct invariants. |
 | Most random inputs die at the first byte. | Add valid seeds, dictionaries, grammar-aware generation, custom mutators, or structured generators. |
+| Structured generator explores only one convenient shape. | Inspect distribution, randomize shape, and compare against a model that checks exact outputs. |
 | “No crash” is too weak for business logic. | Add invariants, differential checks, metamorphic properties, schema validation, or model agreement. |
 | Failures depend on input order or hidden state. | Reset globals/caches, isolate filesystem paths, fake time/randomness, and avoid live network calls. |
 | Corpus grows until CI slows down. | Minimize crashers, prune corpus, separate short PR fuzzing from longer scheduled runs. |
@@ -130,10 +138,11 @@ For deterministic business invariants over valid data, property-based testing ma
 
 1. Choose one input boundary and build a small deterministic harness.
 2. Add seed corpus from valid examples, regressions, edge cases, and protocol fixtures.
-3. Run locally with sanitizers or coverage guidance when available.
-4. Minimize crashes and commit regression seeds when useful.
-5. Add CI or scheduled continuous fuzzing only after local harnesses are stable.
-6. Track findings with owner, artifact, minimized input, command, and fix status.
+3. Inspect generator or corpus distribution for positive, negative, boundary, and adversarial classes.
+4. Run locally with sanitizers or coverage guidance when available.
+5. Minimize crashes and commit regression seeds when useful.
+6. Add CI or scheduled continuous fuzzing only after local harnesses are stable.
+7. Track findings with owner, artifact, minimized input, command, and fix status.
 
 ## Continuous Fuzzing Shape
 
@@ -154,6 +163,8 @@ For deterministic business invariants over valid data, property-based testing ma
 | Fix crash but discard input. | Add minimized crash input to corpus or regression tests. |
 | Snapshot every fuzzed API response. | Assert policy outcomes, schema conformance, and no 500s for validation failures. |
 | Use mutation-only fuzzing for a complex grammar with no seeds. | Seed valid examples and add a grammar/custom mutator so the fuzzer reaches deep logic. |
+| Fuzz only through the whole app and assert no crash. | Add a subsystem fuzzer with a minimal interface and semantic invariants for that layer. |
+| Generate pre-structured records and only check counts. | Generate arbitrary records and queries, then compare exact results against a model. |
 
 ## Packages And Libraries
 
@@ -177,6 +188,7 @@ For deterministic business invariants over valid data, property-based testing ma
 
 - Harness is deterministic, fast, isolated, and bounded.
 - Seeds include valid examples, malformed inputs, boundaries, and prior failures.
+- Generator distribution has been inspected for blind spots.
 - Crashes include minimized input, reproducer command, sanitizer output when relevant, and owner.
 - Semantic invariants are added where “does not crash” is too weak.
 - Continuous fuzzing has triage policy and does not create unowned alert noise.

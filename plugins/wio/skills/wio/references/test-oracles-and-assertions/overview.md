@@ -20,6 +20,7 @@ Define how a test decides whether behavior is correct. A good oracle would fail 
 - Prefer specific semantic assertions over broad "does not throw", count-only, or giant snapshot assertions.
 - Use multiple oracle styles when one is incomplete: example cases, properties, metamorphic relations, differential comparison, contracts, and golden files.
 - Snapshot/golden tests protect reviewed output contracts; they are weak when updates are automatic approval rituals.
+- Snapshot tests work best when the output is a readable domain representation and the snapshot is a reviewed expected result, not an unexamined dump.
 - Failure messages should identify the violated behavior, not only the raw mismatch.
 - Every kept test should have a falsification story: the plausible bug, the observation point, and the assertion or invariant that fails.
 - Treat assertions as executable design understanding. Build the mental model first, then encode it in checks that can catch disagreement between the model and the implementation.
@@ -73,6 +74,7 @@ Return `REDO` or redesign the assertion when:
 - Error-handling paths are untested even though the behavior depends on validation failure, dependency failure, retry, fallback, or cleanup.
 - The expected value is computed through the same production logic under test.
 - A broad snapshot hides the reviewed contract or is routinely updated without semantic review.
+- Snapshot update mode can change files during normal passing test runs, or updates snapshots without first surfacing a mismatch.
 - The assertion depends on private structure, incidental ordering, exact timestamps, random IDs, or current CSS/layout unless those are the contract.
 - A workload checks invariants only at final completion even though intermediate corruption, duplicate effects, or leaked state would matter.
 - Doubles, fixtures, or setup remove the boundary, state, permission, timing, data, or dependency behavior the test claims to protect.
@@ -92,6 +94,7 @@ Return `REDO` or redesign the assertion when:
 - Name the plausible bug caught before claiming `KEEP`.
 - Keep generated/random data deterministic or assert properties instead of exact incidental values.
 - If using snapshot/golden output, explain the reviewed contract and normalization.
+- If snapshots can auto-update, state the opt-in mechanism and ensure normal test runs only write files when the snapshot would otherwise fail.
 
 ## Agent Checklist
 
@@ -103,11 +106,3 @@ Return `REDO` or redesign the assertion when:
 - Prefer semantic matchers and focused diffs.
 - For workloads and stateful tests, check invariants after each meaningful transition.
 - Add failure messages or case names when ambiguity would slow diagnosis.
-
-## Source Anchors
-
-- Barr et al., [The Oracle Problem in Software Testing: A Survey](https://discovery.ucl.ac.uk/1471263/)
-- TigerBeetle, [TigerStyle](https://github.com/tigerbeetle/tigerbeetle/blob/main/docs/TIGER_STYLE.md)
-- Jest, [snapshot testing](https://jestjs.io/docs/snapshot-testing)
-- JUnit 5, [assertions and parameterized tests](https://junit.org/junit5/docs/current/user-guide/)
-- Hypothesis, [property-based testing docs](https://hypothesis.readthedocs.io/)
