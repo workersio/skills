@@ -22,6 +22,8 @@ Define how a test decides whether behavior is correct. A good oracle would fail 
 - Snapshot/golden tests protect reviewed output contracts; they are weak when updates are automatic approval rituals.
 - Failure messages should identify the violated behavior, not only the raw mismatch.
 - Every kept test should have a falsification story: the plausible bug, the observation point, and the assertion or invariant that fails.
+- Treat assertions as executable design understanding. Build the mental model first, then encode it in checks that can catch disagreement between the model and the implementation.
+- Test the expected valid space, the rejected invalid space, and the boundary where valid data becomes invalid.
 
 ## Decision Rules
 
@@ -48,6 +50,7 @@ Use this workflow before writing or reviewing a test:
 5. Name one plausible bug that should fail the assertion.
 6. Check independence: the expected value or model must not copy the production algorithm under test.
 7. Check stability: the assertion should survive behavior-preserving refactors and fail for contract changes.
+8. Check the negative space: invalid input, forbidden transition, denied permission, or impossible state should be asserted explicitly when it matters.
 
 ## Invariant Guidance
 
@@ -57,6 +60,8 @@ Use this workflow before writing or reviewing a test:
 - Check invariants after every meaningful step when intermediate corruption can escape through reads, events, retries, or background jobs.
 - State allowed transient exceptions explicitly, such as inside a transaction, lock, migration batch, or private critical section.
 - Watch for vacuity: a test that never enters the risky state can pass an invariant while missing the product failure.
+- Pair important invariants across boundaries when possible: before write and after read, before send and after receive, before enqueue and after dequeue, before retry and after replay.
+- Split compound assertions when the parts describe distinct facts; precise failures make invariant violations easier to diagnose.
 
 ## Falsification Gate
 
@@ -65,6 +70,7 @@ Return `REDO` or redesign the assertion when:
 - No plausible bug, regression, or failure mode is named.
 - The assertion only proves execution completed, an object exists, a value is truthy, or a mock was called.
 - The test only checks status 200 or no exception for behavior with a stronger contract.
+- Error-handling paths are untested even though the behavior depends on validation failure, dependency failure, retry, fallback, or cleanup.
 - The expected value is computed through the same production logic under test.
 - A broad snapshot hides the reviewed contract or is routinely updated without semantic review.
 - The assertion depends on private structure, incidental ordering, exact timestamps, random IDs, or current CSS/layout unless those are the contract.
@@ -92,6 +98,7 @@ Return `REDO` or redesign the assertion when:
 - Identify the expected behavior before writing code.
 - Check whether the assertion would fail on the target bug.
 - If no target bug exists, name a plausible regression class and verify the assertion would fail for it.
+- Cover valid and invalid spaces when the bug risk lives at their boundary.
 - Avoid duplicating production logic in expected values.
 - Prefer semantic matchers and focused diffs.
 - For workloads and stateful tests, check invariants after each meaningful transition.
@@ -100,6 +107,7 @@ Return `REDO` or redesign the assertion when:
 ## Source Anchors
 
 - Barr et al., [The Oracle Problem in Software Testing: A Survey](https://discovery.ucl.ac.uk/1471263/)
+- TigerBeetle, [TigerStyle](https://github.com/tigerbeetle/tigerbeetle/blob/main/docs/TIGER_STYLE.md)
 - Jest, [snapshot testing](https://jestjs.io/docs/snapshot-testing)
 - JUnit 5, [assertions and parameterized tests](https://junit.org/junit5/docs/current/user-guide/)
 - Hypothesis, [property-based testing docs](https://hypothesis.readthedocs.io/)

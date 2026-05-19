@@ -61,10 +61,12 @@ If the user explicitly names a WIO command, follow that mode. If the command is 
 ## Shared Rules
 
 - Protect meaningful behavior, not coverage numbers.
+- Ask what could go wrong before asking what already broke; use that answer to choose tests while the design is still cheap to change.
 - Establish product, user, production, support, debugging, review, or release risk before recommending or writing tests.
 - Prefer targets where bugs usually occur: boundaries, permissions, state transitions, persistence, external dependencies, concurrency/time, validation/parsing, migrations, configuration, caching, retries/idempotency, UI workflow joins, and recent churn.
 - A test is valuable only if it would catch a meaningful regression, save developer time, improve release confidence, or expose a real operational/customer failure mode.
 - Before keeping a test or workload, name at least one plausible bug it would catch and the assertion or invariant that would fail.
+- Prefer assertions and invariants that encode the mental model of the behavior, including valid cases, invalid cases, and boundary transitions between them.
 - Prefer repo-native frameworks, helpers, fixtures, commands, and naming.
 - Choose the narrowest test level that preserves the real failure mechanism.
 - Load targeted references instead of reading the whole reference library.
@@ -195,7 +197,7 @@ Generate or implement workloads that exercise meaningful user sessions, not one-
 1. Identify the user/session goal and the bug-prone interactions the workload should expose.
 2. Choose workload type: browser journey, API scenario, CLI/session script, background-job flow, load profile, synthetic monitor, or property/stateful sequence.
 3. Define stable invariants and assertions for correctness, not only completion, and decide which checks run after every step, at terminal state, or eventually.
-4. Add adversarial classes deliberately: invalid transitions, duplicate/replayed actions, stale state, permission/tenant edges, malformed-but-valid data, boundary sizes, dependency faults, timing/order changes, and partial failure or recovery.
+4. Add adversarial classes deliberately: invalid transitions, duplicate/replayed actions, stale state, permission/tenant edges, malformed-but-valid data, boundary sizes, dependency faults, timing/order changes, partial failure or recovery, and explicit error-handling paths.
 5. Add controlled variance with seeds, parameter ranges, optional branches, data shape changes, and recorded replay details.
 6. Implement with repo-native workload, E2E, performance, or test tooling when asked to write it.
 7. Validate with the smallest safe command and report seed, coverage of interactions, limits, and residual risk.

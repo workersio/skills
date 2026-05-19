@@ -22,6 +22,7 @@ Design workloads that exercise important user sessions, API/client behavior, ope
 - Assert invariants and user-visible outcomes throughout the workload, not only final completion.
 - Vary meaningful dimensions: roles, account age, data volume, payload shape, locale/time, optional steps, ordering, dependency responses, and think time.
 - Name the plausible bug the workload should catch and the assertion or invariant that would fail.
+- Put limits on workload dimensions. Every loop, queue, retry, generated case count, payload size, timeout, and concurrent actor count should be bounded or intentionally unbounded with an explicit assertion/stop condition.
 - Keep destructive or expensive workloads in safe environments with cleanup, rate limits, and explicit blast-radius controls.
 
 ## Workload Shapes
@@ -58,6 +59,7 @@ Use these classes to turn a realistic session into a bug-finding workload. Pick 
 | Ordering and concurrency | Out-of-order events, parallel mutations, stale read then write, delayed queue. | Conservation, version checks, eventual terminal state, no lost updates. |
 | Dependency faults | Timeout, 429/500, partial response, stale cache, duplicate delivery, slow provider. | Fallback/retry limits, no corruption, recovery outcome, diagnosable failure artifact. |
 | Recovery and cleanup | Crash/resume, rollback, abandoned session, cleanup job, interrupted upload. | Resources released, invariant restored, user-visible recovery path, no orphaned state. |
+| Error handling | Validation failure, non-fatal provider error, rejected event, failed cleanup, partial commit. | Specific error semantics, no swallowed failure, no corrupt state, cleanup/audit signal. |
 
 ## Assertion And Invariant Design
 
@@ -68,6 +70,7 @@ Use these classes to turn a realistic session into a bug-finding workload. Pick 
 - Avoid workloads that only assert completion, status 200, object existence, or absence of thrown errors unless the workload is explicitly a smoke check.
 - For stateful workloads, prefer a simple model, ledger, or state machine that is independent from the implementation under test.
 - Record enough failure artifacts to diagnose which step, seed, branch, input, or invariant failed.
+- Check both sides of important boundaries: accepted/rejected input, allowed/denied action, before/after persistence, enqueue/dequeue, retry/replay, and dependency failure/recovery.
 
 ## Falsification Gate
 
@@ -96,6 +99,7 @@ If the answers are vague, redesign the workload before implementation.
 - Choose the smallest workload level that preserves the interaction risk.
 - Define assertions and invariants before adding variance.
 - Add adversarial classes deliberately and tie each one to a risk.
+- Bound generated work, retries, queues, payload sizes, and concurrency so failures are diagnosable rather than runaway.
 - Make failure replay deterministic.
 - Check that at least one plausible bug would fail a named assertion or invariant.
 - Validate in a safe environment and record residual risk.
@@ -106,4 +110,5 @@ If the answers are vague, redesign the workload before implementation.
 - Grafana k6, [scenarios](https://grafana.com/docs/k6/latest/using-k6/scenarios/)
 - Locust, [writing a locustfile](https://docs.locust.io/en/stable/writing-a-locustfile.html)
 - Hypothesis, [stateful testing](https://hypothesis.readthedocs.io/en/latest/stateful.html)
+- TigerBeetle, [TigerStyle](https://github.com/tigerbeetle/tigerbeetle/blob/main/docs/TIGER_STYLE.md)
 - Google SRE, [Addressing Cascading Failures](https://sre.google/sre-book/addressing-cascading-failures/)

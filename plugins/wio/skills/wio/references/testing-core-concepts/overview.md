@@ -30,6 +30,9 @@ An assertion is a precise claim about observed behavior. In tests, it should ans
 - Prefer assertion forms that explain the failure. A domain matcher, structured diff, schema error, or custom predicate with diagnostic output is usually better than a bare truthiness check.
 - Name the failure mode the assertion would catch. If no realistic bug would make the assertion fail, the assertion is low value.
 - Avoid assertions that only prove execution reached a line: `not.toThrow`, `notNull`, `toBeTruthy`, mock call count, and empty snapshots are usually weak unless the test is explicitly a smoke or wiring check.
+- Assert positive and negative space when the boundary matters: expected valid behavior, expected rejection, and the transition point between them.
+- Pair important checks across boundaries when possible, such as before write and after read, before send and after receive, or before retry and after replay.
+- Split compound assertions when separate facts can fail independently; the failure should point to the broken property.
 - Keep multiple assertions in one test only when they all describe the same behavior or invariant. Split unrelated properties into separate tests so failures point to one broken rule.
 
 ### How To Think About Assertions
@@ -185,12 +188,14 @@ Use this workflow before adding or reviewing tests:
 6. Define the assertion shape: narrow semantic assertion, state invariant check, eventual assertion, structured matcher, snapshot/golden diff, metric threshold, or monitor.
 7. Check falsifiability: identify at least one plausible bug that would fail the assertion.
 8. Check stability: the test should survive behavior-preserving refactors and fail when the protected contract changes.
-9. Check scope: use the lowest test level that preserves the real risk, then add broader tests only for integration, workflow, or operational confidence that lower levels cannot provide.
+9. Check the negative space: invalid inputs, denied permissions, forbidden transitions, dependency failures, and cleanup failures should be tested when they are part of the risk.
+10. Check scope: use the lowest test level that preserves the real risk, then add broader tests only for integration, workflow, or operational confidence that lower levels cannot provide.
 
 ## Source Anchors
 
 - Google Testing Blog, [Prefer Narrow Assertions in Unit Tests](https://testing.googleblog.com/2024/04/prefer-narrow-assertions-in-unit-tests.html)
 - Google, [Software Engineering at Google: Unit Testing](https://abseil.io/resources/swe-book/html/ch12.html)
+- TigerBeetle, [TigerStyle](https://github.com/tigerbeetle/tigerbeetle/blob/main/docs/TIGER_STYLE.md)
 - GoogleTest, [Assertions Reference](https://google.github.io/googletest/reference/assertions.html)
 - Eiffel, [Design by Contract and Assertions](https://www.eiffel.org/doc/eiffel/I2E-_Design_by_Contract_and_Assertions)
 - Leslie Lamport, [PlusCal Tutorial Session 9: Liveness](https://lamport.org/tla/tutorial/session9.html)
