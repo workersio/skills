@@ -74,7 +74,7 @@ find .codex/agents ~/.codex/agents -name 'wio-*.toml' 2>/dev/null
 | --- | --- |
 | `$wio scan [target]` | Maps product behavior, existing tests, CI, and risk areas to find the highest-value tests to add next. |
 | `$wio test [target]` | Runs the full loop: discover a bug-prone candidate, pick strategy, write test, validate, review, then keep only if valuable. |
-| `$wio workload [target]` | Generates or implements realistic, adversarial, replayable user-session/API/CLI/job/load workloads with controlled variance, assertions, and invariants. |
+| `$wio workload [target]` | Generates realistic, adversarial, replayable user-session/API/CLI/job/load workloads that add new bug-finding value beyond existing workloads. |
 | `$wio review [target]` | Reviews a test for customer value, developer-flow value, signal quality, maintainability, and false confidence. |
 | `$wio doctor [target]` | Audits test-suite health: weak assertions, flakes, excessive mocks, broad snapshots, slow feedback, skipped tests, and missing critical behavior coverage. |
 
@@ -116,7 +116,7 @@ Reference topics include:
 | Behavior mapping | Turning product behavior, workflows, APIs, and incidents into test candidates. |
 | Risk-based testing | Prioritizing tests by customer impact, likelihood, confidence gap, and cost. |
 | Test level selection | Choosing unit, component, integration, contract, E2E, monitoring, or specialized checks. |
-| Workload modeling | Building realistic session, traffic, stateful, synthetic, or operator workloads with bounded variance and replay. |
+| Workload modeling | Building realistic session, traffic, stateful, synthetic, or operator workloads with new failure surfaces, bounded variance, replay, and meaningful invariants. |
 | Oracles and assertions | Designing assertions that fail for real regressions and explain what broke. |
 | Test data and fixtures | Setup, isolation, factories, seeds, cleanup, and state management. |
 | Mocking and doubles | Preserving fidelity while keeping tests deterministic and fast. |
@@ -133,7 +133,7 @@ $wio review tests/billing_eligibility_test.py
 $wio doctor API test suite
 ```
 
-Use `scan` when you do not yet know what to test. Use `test` when you want the whole candidate-strategy-write-review loop. Use `workload` when interaction across a realistic session is the risk. Use `review` when a test already exists or has just been written. Use `doctor` when an existing suite is hard to trust.
+Use `scan` when you do not yet know what to test. Use `test` when you want the whole candidate-strategy-write-review loop. Use `workload` when interaction across a realistic session is the risk and the work should add coverage beyond existing workload behavior. Use `review` when a test already exists or has just been written. Use `doctor` when an existing suite is hard to trust.
 
 ## What Good Means
 
@@ -146,6 +146,7 @@ A generated or recommended test should answer:
 - Is the assertion specific enough to diagnose the broken behavior?
 - Does the setup preserve the important dependency, state, permission, timing, or data risk?
 - Does this belong in local development, PR CI, nightly, release, or production monitoring?
+- If this is a workload, what existing workloads were inspected, what gap does this fill, and why is it more than a wrapper, runner, seed sweep, or parameter expansion?
 - If this is a workload, is variance bounded, seeded, replayable, adversarial in the right places, and checked by meaningful invariants?
 
 If those answers are weak, the test should be redesigned or removed.

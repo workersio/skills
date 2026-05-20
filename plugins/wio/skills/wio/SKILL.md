@@ -14,7 +14,7 @@ WIO is one testing workflow skill with five command modes:
 
 - `scan`: find the highest-value test candidates for a codebase, change, or scope.
 - `test`: write one focused high-value test for a selected behavior, code path, or regression risk.
-- `workload`: generate a realistic, adversarial workload that covers an important user session with controlled variance, replay, and correctness invariants.
+- `workload`: generate a realistic, adversarial workload that adds a new failure surface, oracle, sequence, or coverage dimension with controlled variance, replay, and correctness invariants.
 - `review`: review a newly written or existing test for customer value, developer value, signal quality, and maintainability.
 - `doctor`: diagnose test-suite health problems in a codebase or scope.
 
@@ -24,7 +24,7 @@ Commands are accessed through `$wio`:
 | --- | --- | --- |
 | `$wio scan [target]` | Find the highest-value test candidates for a codebase, change, or scope. | [Behavior To Test Map](references/behavior-to-test-map/overview.md) |
 | `$wio test [target]` | Discover a valuable candidate, pick strategy, write one test, validate, review, and keep only if valuable. | [Test Level Selection](references/test-level-selection/overview.md) |
-| `$wio workload [target]` | Generate or implement a realistic workload with important user tasks, adversarial edge cases, assertions, invariants, and controlled variance. | [Workload Modeling](references/workload-modeling/overview.md) |
+| `$wio workload [target]` | Generate a realistic workload that adds new bug-finding value beyond existing workloads, with important user tasks, adversarial edge cases, assertions, invariants, and controlled variance. | [Workload Modeling](references/workload-modeling/overview.md) |
 | `$wio review [target]` | Review a test for meaningful customer or developer value and return `KEEP`, `REDO`, or `REMOVE`. | [Test Oracles And Assertions](references/test-oracles-and-assertions/overview.md) |
 | `$wio doctor [target]` | Diagnose test-suite health problems in a codebase or scope. | [Test Suite Health Diagnostics](references/test-suite-health-diagnostics/overview.md) |
 
@@ -54,6 +54,8 @@ Use `scan` when the user asks what to test next, where coverage would matter, ho
 Use `test` when the user asks to add a test, improve a specific test, cover a bug, or validate a change with a meaningful automated test.
 
 Use `workload` when the user asks for a realistic user-session workload, scenario generator, traffic model, load/performance scenario, browser journey mix, synthetic user flow, or varied workload that still preserves a stable task goal.
+
+If the user asks to `generate` a workload, treat existing workloads as evidence and reusable infrastructure, not as the deliverable. A generated workload must add at least one new failure surface, adversarial class, oracle/invariant, state model, dependency fault, user/session path, or coverage dimension. A wrapper, runner, seed sweep, parameter expansion, or documentation-only change around an existing workload is not a generated workload unless the user explicitly asked for a runner or the wrapper adds a new oracle or adversarial model.
 
 Use `review` when the user asks whether a test is worth keeping, asks for test review, or after `$wio test` writes or changes a test.
 
@@ -85,6 +87,7 @@ If the user explicitly names a WIO command, follow that mode. If the command is 
 - Do not weaken assertions to fix flakes. First look for nondeterminism, shared state, timing, retries, order dependence, or external services.
 - Do not treat green CI as proof the test is valuable. The question is whether the test would fail for the meaningful regression.
 - Do not accept tests or workloads that only prove completion, truthiness, object existence, status 200, broad snapshot equality, or mock call counts unless that weak signal is explicitly the protected contract.
+- Do not present a thin wrapper around an existing workload as `$wio workload generate`. If the change only reruns, parameterizes, documents, or sweeps an existing workload, call it a runner and explain the missing new failure surface.
 - Do not let subagents write tests or make the final value decision; the main agent owns edits and the final `KEEP`, `REDO`, or `REMOVE`.
 
 ## Available Scripts
@@ -197,21 +200,25 @@ Falsification check: [plausible bug and assertion/invariant that would fail]
 
 ## workload
 
-Generate or implement workloads that exercise meaningful user sessions, not one-off happy-path tests. A workload should cover important tasks a real user, API client, operator, or background process performs during a session, with adversarial but realistic misuse and controlled variance that changes data, ordering, scale, timing, or optional branches while preserving the same core task.
+Generate workloads that exercise meaningful user sessions, not one-off happy-path tests or wrappers around existing runners. A workload should cover important tasks a real user, API client, operator, or background process performs during a session, with adversarial but realistic misuse and controlled variance that changes data, ordering, scale, timing, or optional branches while preserving the same core task.
 
-**Start with code evidence:** inspect the user/session entry points, implementation, existing tests, fixtures, commands, and workload/E2E tooling. After identifying the actor, goal, and bug-prone interactions, load [Workload Modeling](references/workload-modeling/overview.md) and [Test Oracles And Assertions](references/test-oracles-and-assertions/overview.md). Add performance, resilience, security, user-behavior, property-based, fuzzing, or data references only when the workload's risk depends on those dimensions.
+**Start with code evidence:** inspect the user/session entry points, implementation, existing tests, fixtures, commands, and workload/E2E tooling. Existing workloads should reveal gaps, not become the default implementation. After identifying the actor, goal, bug-prone interactions, and existing workload coverage, load [Workload Modeling](references/workload-modeling/overview.md) and [Test Oracles And Assertions](references/test-oracles-and-assertions/overview.md). Add performance, resilience, security, user-behavior, property-based, fuzzing, or data references only when the workload's risk depends on those dimensions.
+
+**Originality gate:** before editing, state what existing workloads already cover and what the new workload adds. The new workload must introduce at least one of: a new failure surface, adversarial class, oracle/invariant, state model, dependency fault, user/session path, data shape, timing/order dimension, or replay artifact. If the best next step is only a wrapper, runner, seed sweep, or parameter expansion, say that plainly and do not call it a generated workload unless the user asked for that.
 
 **Workflow:**
 
 1. Inspect user/session entry points, implementation, existing tests, fixtures, commands, and workload/E2E tooling.
-2. Identify the user/session goal and the bug-prone interactions the workload should expose.
-3. Load the references that match the workload's failure mechanism.
-4. Choose workload type: browser journey, API scenario, CLI/session script, background-job flow, load profile, synthetic monitor, or property/stateful sequence.
-5. Define stable invariants and assertions for correctness, not only completion, and decide which checks run after every step, at terminal state, or eventually.
-6. Add adversarial classes deliberately: invalid transitions, duplicate/replayed actions, stale state, permission/tenant edges, malformed-but-valid data, boundary sizes, dependency faults, timing/order changes, partial failure or recovery, and explicit error-handling paths.
-7. Add controlled variance with seeds, parameter ranges, optional branches, data shape changes, and recorded replay details.
-8. Implement with repo-native workload, E2E, performance, or test tooling when asked to write it.
-9. Validate with the smallest safe command and report seed, coverage of interactions, limits, and residual risk.
+2. Inventory existing workloads and summarize their actor, failure surface, oracle/invariants, variance, and replay behavior.
+3. Identify the user/session goal and the bug-prone interactions the new workload should expose.
+4. State the coverage gap: what existing workloads miss and why that gap matters.
+5. Load the references that match the workload's failure mechanism.
+6. Choose workload type: browser journey, API scenario, CLI/session script, background-job flow, load profile, synthetic monitor, or property/stateful sequence.
+7. Define stable invariants and assertions for correctness, not only completion, and decide which checks run after every step, at terminal state, or eventually.
+8. Add adversarial classes deliberately: invalid transitions, duplicate/replayed actions, stale state, permission/tenant edges, malformed-but-valid data, boundary sizes, dependency faults, timing/order changes, partial failure or recovery, and explicit error-handling paths.
+9. Add controlled variance with seeds, parameter ranges, optional branches, data shape changes, and recorded replay details.
+10. Implement with repo-native libraries, fixtures, helpers, or workload tooling when useful, but do not reuse an existing workload unchanged as the generated workload.
+11. Validate with the smallest safe command and report seed, coverage of interactions, limits, and residual risk.
 
 **Output template:**
 
@@ -222,9 +229,16 @@ Goal: [...]
 Shape: [browser/API/CLI/job/load/synthetic/stateful]
 References used: [...]
 
+## Existing Coverage
+Existing workloads found: [...]
+What they cover: [...]
+Gap this workload fills: [...]
+Why this is not only a wrapper/runner/seed sweep: [...]
+
 ## Coverage
 Interactions: [...]
 Bug-prone areas: [...]
+New failure surface/adversarial class/oracle: [...]
 Invariants/assertions: [...]
 
 ## Adversarial Model

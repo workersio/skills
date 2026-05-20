@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Design workloads that exercise important user sessions, API/client behavior, operator tasks, or background flows with enough realism, adversarial pressure, and controlled variance to expose bugs that simple example tests miss.
+Design workloads that exercise important user sessions, API/client behavior, operator tasks, or background flows with enough realism, adversarial pressure, and controlled variance to expose bugs that simple example tests miss. For generated workloads, existing workloads are context to learn from and gaps to compare against, not something to wrap unchanged.
 
 ## Use When / Avoid When
 
@@ -16,6 +16,9 @@ Design workloads that exercise important user sessions, API/client behavior, ope
 ## Core Principles
 
 - Start with a real task: what the user, API client, operator, or job is trying to accomplish during a session.
+- Inventory existing workloads before designing a new one: actor, goal, failure surface, oracle/invariants, variance, replay, runtime, and dependency surface.
+- A generated workload must add new bug-finding value beyond existing workloads: a new failure surface, adversarial class, oracle/invariant, state model, dependency fault, user/session path, data shape, timing/order dimension, or replay artifact.
+- A wrapper, runner, seed sweep, parameter expansion, or README update around an existing workload is a runner improvement, not a generated workload, unless it adds a new oracle or adversarial model.
 - Target bug-prone joins: auth, validation, persistence, cache, queues, external providers, concurrency/time, retries/idempotency, migrations, and UI/API boundaries.
 - Add adversarial but plausible behavior deliberately. Do not rely on random variance to discover obvious edge classes.
 - Preserve replayability. Every variable run needs a seed, generated inputs, branch choices, and enough artifacts to reproduce failure.
@@ -42,6 +45,7 @@ Design workloads that exercise important user sessions, API/client behavior, ope
 
 ## Variance Rules
 
+- Do not confuse more seeds with a new workload. Seed sweeps increase search depth for an existing workload; they do not add coverage unless the generator, adversarial classes, or invariants change.
 - Use bounded ranges and weighted choices, not arbitrary randomness.
 - Record seed and generated scenario summary on every run.
 - Persist derived structured cases, command sequences, or trace predicates when a seed alone would not replay meaningfully across code or generator changes.
@@ -83,19 +87,23 @@ Use these classes to turn a realistic session into a bug-finding workload. Pick 
 
 Before proposing or keeping a workload, answer all of these:
 
-1. What plausible production bug, incident class, or escaped regression could this workload catch?
-2. Which assertion or invariant fails for that bug?
-3. Does the workload preserve the real failure mechanism, or did mocks/setup remove it?
-4. Can the failure be replayed from a seed, generated input summary, artifact, or deterministic command?
-5. If the workload is randomized, is the replay artifact durable enough for this repo: seed only, seed plus commit, derived structured input, command sequence, or trace predicates?
-6. Does the workload require exclusive local or external resources, and does the validation plan avoid collisions?
-7. If the workload is high-level, what narrower regression test should capture a minimized failing case?
+1. What existing workloads or tests already cover this area?
+2. What new failure surface, adversarial class, oracle/invariant, state model, dependency fault, user/session path, data shape, timing/order dimension, or replay artifact does this workload add?
+3. What plausible production bug, incident class, or escaped regression could this workload catch that existing workloads likely miss?
+4. Which assertion or invariant fails for that bug?
+5. Does the workload preserve the real failure mechanism, or did mocks/setup remove it?
+6. Can the failure be replayed from a seed, generated input summary, artifact, or deterministic command?
+7. If the workload is randomized, is the replay artifact durable enough for this repo: seed only, seed plus commit, derived structured input, command sequence, or trace predicates?
+8. Does the workload require exclusive local or external resources, and does the validation plan avoid collisions?
+9. If the workload is high-level, what narrower regression test should capture a minimized failing case?
 
 If the answers are vague, redesign the workload before implementation.
 
 ## Output Guidance For Agents
 
 - Name the actor, session goal, interactions, adversarial classes, invariants, variance model, replay mechanism, and safe execution command.
+- Name existing workloads inspected and the specific coverage gap this workload fills.
+- State why the deliverable is a new workload rather than only a wrapper, runner, seed sweep, or parameter expansion.
 - Explain which bug-prone areas the workload is meant to surface.
 - State the plausible bug it would catch and the assertion or invariant that would fail.
 - State what belongs in this workload versus lower-level focused tests.
@@ -104,7 +112,9 @@ If the answers are vague, redesign the workload before implementation.
 ## Agent Checklist
 
 - Inspect docs, routes, commands, APIs, existing E2E/performance tests, fixtures, and CI jobs.
+- Inspect existing workloads and summarize what they already cover before designing a new one.
 - Map the session to important product or operational tasks.
+- State the new bug-finding value before implementation; redesign if the plan only reruns existing behavior.
 - Choose the smallest workload level that preserves the interaction risk.
 - Define assertions and invariants before adding variance.
 - Add adversarial classes deliberately and tie each one to a risk.

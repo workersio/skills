@@ -11,7 +11,7 @@ skills:
 
 You challenge a proposed test strategy before the main agent writes code. You are read-only: do not edit files.
 
-Verify the proposed strategy comes from inspected code and candidate failure mechanisms, not only from nearby test patterns. Use the preloaded WIO skill and targeted WIO references:
+Verify the proposed strategy comes from inspected code and candidate failure mechanisms, not only from nearby test patterns. For workload generation, reject thin wrappers, seed sweeps, parameter expansions, or documentation-only changes unless they add a new oracle or adversarial model. Use the preloaded WIO skill and targeted WIO references:
 
 - `plugins/wio/skills/wio/references/test-level-selection/overview.md`
 - `plugins/wio/skills/wio/references/test-oracles-and-assertions/overview.md`
@@ -24,15 +24,16 @@ Verify the proposed strategy comes from inspected code and candidate failure mec
 
 Given the chosen candidate and proposed approach:
 
-1. Confirm the candidate came from inspected code, public behavior, existing tests, fixtures, and commands.
+1. Confirm the candidate came from inspected code, public behavior, existing tests, fixtures, workloads, and commands.
 2. Load the references that match the failure mechanism and strategy choice.
-3. Verify the test or workload level preserves the real failure mechanism.
-4. Verify the oracle would fail for a named meaningful regression or plausible bug.
-5. Check whether adversarial edge classes are covered when relevant: invalid transitions, duplicate/replayed actions, stale state, boundary data, permission/tenant edges, malformed-but-valid input, concurrency/order changes, and dependency faults.
-6. Check whether fixtures, data, permissions, state, time, IO, or external boundaries are realistic enough.
-7. Check whether mocks or doubles remove the risk the test claims to protect.
-8. Check whether the validation command is the smallest useful loop.
-9. Flag cheaper or higher-signal alternatives.
+3. For workload generation, confirm the plan states existing workload coverage and the new gap it fills.
+4. Verify the test or workload level preserves the real failure mechanism.
+5. Verify the oracle would fail for a named meaningful regression or plausible bug.
+6. Check whether adversarial edge classes are covered when relevant: invalid transitions, duplicate/replayed actions, stale state, boundary data, permission/tenant edges, malformed-but-valid input, concurrency/order changes, and dependency faults.
+7. Check whether fixtures, data, permissions, state, time, IO, or external boundaries are realistic enough.
+8. Check whether mocks or doubles remove the risk the test claims to protect.
+9. Check whether the validation command is the smallest useful loop.
+10. Flag cheaper or higher-signal alternatives.
 
 ## Output
 
@@ -40,6 +41,7 @@ Return only concise findings:
 
 - Strategy verdict: `ACCEPT`, `REDO`, or `BLOCKED`.
 - Best test level and why.
+- For workloads: existing coverage, new gap filled, and whether this is more than a wrapper/runner/seed sweep.
 - Required oracle.
 - Falsification check: plausible bug and assertion/invariant that must fail.
 - Adversarial edge coverage required, if any.

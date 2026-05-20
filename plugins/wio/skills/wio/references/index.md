@@ -10,7 +10,7 @@ WIO exposes one skill with five command modes:
 | --- | --- |
 | scan | Behavior To Test Map, Risk-Based Testing, User Behavior Testing, Test Level Selection, and the relevant topic reference for the chosen strategy. |
 | test | Full loop: bug-prone candidate discovery, strategy selection, test implementation, validation, and review. Use behavior mapping, risk, level selection, oracles, data, doubles, specialized strategies, and feedback loops. |
-| workload | Generate or implement realistic user-session, API, CLI, background-job, load, synthetic, or stateful workloads with adversarial edge coverage, assertions, invariants, controlled variance, and replay. |
+| workload | Generate realistic user-session, API, CLI, background-job, load, synthetic, or stateful workloads that add new bug-finding value beyond existing workloads, with adversarial edge coverage, assertions, invariants, controlled variance, and replay. |
 | review | Test value gate: customer/developer value, oracle strength, realistic setup, feedback-loop fit, and `KEEP`, `REDO`, or `REMOVE`. |
 | doctor | Test Suite Health Diagnostics, then targeted references for level, oracle, doubles, data, flake, and feedback-loop findings. |
 
@@ -66,17 +66,19 @@ These subagents are process accelerators, not separate doctrine.
 
 ## WIO Workload Pipeline
 
-`$wio workload` should produce a realistic, adversarial, replayable scenario rather than a random script:
+`$wio workload` should produce a realistic, adversarial, replayable scenario rather than a random script or a thin wrapper around an existing workload. Existing workloads are evidence and infrastructure; the generated workload must add a new failure surface, adversarial class, oracle/invariant, state model, dependency fault, user/session path, data shape, timing/order dimension, or replay artifact.
 
 1. Inspect the code, entry points, existing tests, fixtures, commands, and any workload or E2E tooling.
-2. Identify the actor, session goal, and bug-prone interactions.
-3. Load workload, oracle, and any specialized references that match the failure mechanism.
-4. Pick workload shape and execution loop.
-5. Define correctness assertions, invariants, and failure artifacts.
-6. Add adversarial classes deliberately: invalid transitions, duplicate/replayed actions, stale state, boundary data, permission/tenant edges, timing/order changes, and dependency faults.
-7. Add bounded variance with seed/replay details.
-8. Implement only with repo-native tooling when asked to edit.
-9. Validate safely and report limits.
+2. Inventory existing workloads and summarize their actor, failure surface, oracle/invariants, variance, and replay behavior.
+3. Identify the actor, session goal, and bug-prone interactions.
+4. State the gap the new workload fills beyond existing workload coverage.
+5. Load workload, oracle, and any specialized references that match the failure mechanism.
+6. Pick workload shape and execution loop.
+7. Define correctness assertions, invariants, and failure artifacts.
+8. Add adversarial classes deliberately: invalid transitions, duplicate/replayed actions, stale state, boundary data, permission/tenant edges, timing/order changes, and dependency faults.
+9. Add bounded variance with seed/replay details.
+10. Implement with repo-native helpers or tooling when asked to edit, but do not reuse an existing workload unchanged as the generated workload.
+11. Validate safely and report limits.
 
 ## Quick Selection
 
@@ -137,5 +139,5 @@ These subagents are process accelerators, not separate doctrine.
 - Snapshot tests need a clear protected contract; unreviewed snapshot updates create low-signal approval tests.
 - Regression tests should prove that a specific failure cannot silently return.
 - Candidate selection should maximize test ROI: customer/business impact, likelihood, confidence gap, and cost to test.
-- Workloads should model real sessions with bounded, recorded variance and correctness assertions.
+- Workloads should model real sessions with bounded, recorded variance and correctness assertions, and generated workloads should clearly state what they add beyond existing workload coverage.
 - Validation reports should name commands run, commands not run, and residual risk.
