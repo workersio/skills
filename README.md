@@ -1,22 +1,19 @@
+<h1>@workersio/skills</h1>
+
+<p>
+  The only skill you will need for software reliability and correctness.
+</p>
+
+<p>
+  <a href="https://github.com/workersio/skills/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/workersio/skills?style=flat&color=111827"></a>
+  <a href="https://github.com/workersio/skills/releases"><img alt="Release" src="https://img.shields.io/github/v/release/workersio/skills?style=flat&color=111827"></a>
+  <a href="https://github.com/workersio/skills/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/workersio/skills?style=flat&color=111827"></a>
+</p>
+
 <div align="center">
   <img src="public/header.jpg" alt="Workers IO skill for coding agents to test code for reliability and correctness" width="100%">
   <img src="public/wio-demo.gif" alt="@workersio/skills running inside a coding agent terminal" width="880">
 </div>
-
-<h1 align="center">@workersio/skills</h1>
-
-<p align="center">
-  The only skill you will need for software reliability and correctness.
-</p>
-
-<p align="center">
-  <a href="https://github.com/workersio/skills/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/workersio/skills?style=flat&color=111827"></a>
-  <a href="https://github.com/workersio/skills/releases"><img alt="Release" src="https://img.shields.io/github/v/release/workersio/skills?style=flat&color=111827"></a>
-  <a href="https://github.com/workersio/skills/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/workersio/skills?style=flat&color=111827"></a>
-  <img alt="Codex" src="https://img.shields.io/badge/Codex-plugin-111827?style=flat">
-  <img alt="Claude Code" src="https://img.shields.io/badge/Claude_Code-plugin-111827?style=flat">
-  <img alt="Testing" src="https://img.shields.io/badge/focus-test_quality-111827?style=flat">
-</p>
 
 Most AI-written tests optimize for coverage. They assert implementation details,
 mock away the real risk, and pass even when the product breaks.
