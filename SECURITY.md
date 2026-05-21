@@ -16,12 +16,13 @@ reasonable chance to investigate and prepare a fix.
 
 ## Scope
 
-WIO is a skill and plugin package for coding agents. The highest-risk areas are:
+`@workersio/skills` is a skill and plugin package for coding agents. The
+highest-risk areas are:
 
 - Hook behavior.
 - Agent instructions that could cause unsafe file or command handling.
 - Packaging metadata that installs unexpected files.
 - Documentation that encourages leaking secrets into prompts, logs, comments, or test fixtures.
 
-WIO should never require production credentials in examples, tests, workloads,
-or issue reports.
+`@workersio/skills` should never require production credentials in examples,
+tests, workloads, or issue reports.

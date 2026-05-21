@@ -19,9 +19,9 @@
   "skills": "./skills/",
   "hooks": "./hooks/hooks.json",
   "interface": {
-    "displayName": "WIO",
+    "displayName": "@workersio/skills",
     "shortDescription": "Write better tests, not more tests.",
-    "longDescription": "WIO gives coding agents a rigorous testing workflow for discovering valuable test candidates, choosing the right strategy, writing focused tests, generating realistic replayable workloads, reviewing test value with KEEP/REDO/REMOVE decisions, and diagnosing suite health.",
+    "longDescription": "@workersio/skills gives coding agents a rigorous testing workflow for discovering valuable test candidates, choosing the right strategy, writing focused tests, generating realistic replayable workloads, reviewing test value with KEEP/REDO/REMOVE decisions, and diagnosing suite health.",
     "developerName": "workers.io",
     "category": "Productivity",
     "capabilities": [

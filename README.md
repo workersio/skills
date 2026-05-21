@@ -1,11 +1,12 @@
 <div align="center">
-  <img src="public/header.jpg" alt="WIO testing workflow skill for coding agents" width="100%">
+  <img src="public/header.jpg" alt="Workers IO skill for coding agents to test code for reliability and correctness" width="100%">
+  <img src="public/wio-demo.gif" alt="@workersio/skills running inside a coding agent terminal" width="880">
 </div>
 
-<h1 align="center">WIO</h1>
+<h1 align="center">@workersio/skills</h1>
 
 <p align="center">
-  Write better tests, not more tests.
+  The only skill you will need for software reliability and correctness.
 </p>
 
 <p align="center">
@@ -17,16 +18,13 @@
   <img alt="Testing" src="https://img.shields.io/badge/focus-test_quality-111827?style=flat">
 </p>
 
-<p align="center">
-  <img src="public/wio-demo.gif" alt="WIO running inside a coding agent terminal" width="880">
-</p>
-
 Most AI-written tests optimize for coverage. They assert implementation details,
-mock away the real risk, and pass even when the product breaks. WIO gives coding
-agents a testing workflow that asks a stricter question: will this test catch a
-real regression that users, operators, reviewers, or maintainers care about?
+mock away the real risk, and pass even when the product breaks.
+`@workersio/skills` gives coding agents a testing workflow that asks a stricter
+question: will this test catch a real regression that users, operators,
+reviewers, or maintainers care about?
 
-WIO is one skill with five command modes:
+`@workersio/skills` is one skill with five command modes:
 
 ```text
 $wio scan      # Find high-value tests to add next.
@@ -39,16 +37,31 @@ $wio doctor    # Audit suite health, weak assertions, flakes, mocks, and CI blin
 ## Works With
 
 <p>
-  <img src="public/openai.svg" alt="Codex" width="22" align="center"> Codex &nbsp;&nbsp;
-  <img src="public/claude.svg" alt="Claude Code" width="22" align="center"> Claude Code &nbsp;&nbsp;
-  <img src="public/cursor.svg" alt="Cursor" width="22" align="center"> Cursor-compatible skill installs &nbsp;&nbsp;
-  <img src="public/copilot.svg" alt="GitHub Copilot" width="22" align="center"> GitHub Copilot workflows &nbsp;&nbsp;
-  <img src="public/gemini.svg" alt="Gemini" width="22" align="center"> Other coding agents
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/openai-dark.svg">
+    <img src="public/openai-light.svg" alt="Codex" width="22" align="center">
+  </picture> Codex &nbsp;&nbsp;
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/claude-dark.svg">
+    <img src="public/claude-light.svg" alt="Claude Code" width="22" align="center">
+  </picture> Claude Code &nbsp;&nbsp;
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/cursor-dark.svg">
+    <img src="public/cursor-light.svg" alt="Cursor" width="22" align="center">
+  </picture> Cursor &nbsp;&nbsp;
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/copilot-dark.svg">
+    <img src="public/copilot-light.svg" alt="GitHub Copilot" width="22" align="center">
+  </picture> GitHub Copilot &nbsp;&nbsp;
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/gemini-dark.svg">
+    <img src="public/gemini-light.svg" alt="Gemini" width="22" align="center">
+  </picture> Gemini
 </p>
 
-WIO is packaged for Codex and Claude Code today. The core skill content is plain
-Markdown, so the testing workflow can also be adapted by other coding agents
-that support project skills, instructions, or reusable prompts.
+`@workersio/skills` is packaged for Codex and Claude Code today. The core skill
+content is plain Markdown, so the testing workflow can also be adapted by other
+coding agents that support project skills, instructions, or reusable prompts.
 
 ## Install
 
@@ -77,7 +90,7 @@ For local Codex plugin testing from this checkout:
 codex plugin marketplace add .
 ```
 
-## What WIO Provides
+## What It Provides
 
 | Area | What the agent gets |
 | --- | --- |
@@ -100,7 +113,7 @@ codex plugin marketplace add .
 
 ## Quality Bar
 
-A WIO-approved test should answer:
+An approved test should answer:
 
 - What user, operator, customer, or API consumer failure does this prevent?
 - What production, release, support, debugging, or review risk does it reduce?
@@ -114,7 +127,7 @@ If those answers are weak, the test should be redesigned or removed.
 
 ## Subagents
 
-WIO includes three optional focused subagents:
+`@workersio/skills` includes three optional focused subagents:
 
 | Subagent | Role |
 | --- | --- |
@@ -130,7 +143,7 @@ replace the main workflow.
 
 | Path | Purpose |
 | --- | --- |
-| `plugins/wio/skills/wio/SKILL.md` | Source of truth for the WIO skill workflow. |
+| `plugins/wio/skills/wio/SKILL.md` | Source of truth for the skill workflow. |
 | `plugins/wio/skills/wio/references/` | Detailed testing guidance loaded only when relevant. |
 | `plugins/wio/agents/` | Claude Code plugin subagents. |
 | `.codex/agents/` | Codex custom-agent TOML files for project or user installs. |
@@ -141,25 +154,25 @@ replace the main workflow.
 
 ## Codex Agents And Hooks
 
-Codex plugin installs include the WIO skill and plugin hook config. Codex custom
+Codex plugin installs include the skill and plugin hook config. Codex custom
 agents are a separate native surface loaded from `.codex/agents/` in a project
 or `~/.codex/agents/` for the user.
 
-Enable WIO Codex agents globally:
+Enable the Codex agents globally:
 
 ```bash
 mkdir -p ~/.codex/agents
 cp .codex/agents/wio-*.toml ~/.codex/agents/
 ```
 
-Enable WIO Codex agents for the current project:
+Enable the Codex agents for the current project:
 
 ```bash
 mkdir -p .codex/agents
 cp /path/to/wio-skills/.codex/agents/wio-*.toml .codex/agents/
 ```
 
-Enable the WIO Codex hook config for the current project:
+Enable the Codex hook config for the current project:
 
 ```bash
 mkdir -p .codex
@@ -168,7 +181,7 @@ cp /path/to/wio-skills/.codex/hooks.json .codex/hooks.json
 
 ## Claude Code Agents And Hooks
 
-Claude plugin installs include the WIO skill, plugin hooks, and Markdown
+Claude plugin installs include the skill, plugin hooks, and Markdown
 subagents from `plugins/wio/agents/`. Project-local Claude Code agents can also
 be copied into `.claude/agents/` when a repository is not using the plugin.
 

@@ -3,7 +3,7 @@
   "owner": {
     "name": "workers.io"
   },
-  "description": "WIO helps coding agents write, review, and diagnose high-value tests instead of coverage padding.",
+  "description": "@workersio/skills helps coding agents write, review, and diagnose high-value tests instead of coverage padding.",
   "plugins": [
     {
       "name": "wio",

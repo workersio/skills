@@ -1,7 +1,7 @@
 {
   "name": "wio",
   "interface": {
-    "displayName": "WIO"
+    "displayName": "@workersio/skills"
   },
   "plugins": [
     {

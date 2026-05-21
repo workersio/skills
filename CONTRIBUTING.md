@@ -1,16 +1,16 @@
 # Contributing
 
-WIO is intentionally one skill with five command modes: `scan`, `test`,
-`workload`, `review`, and `doctor`. Please keep contributions aligned with that
-shape.
+`@workersio/skills` is intentionally one skill with five command modes: `scan`,
+`test`, `workload`, `review`, and `doctor`. Please keep contributions aligned
+with that shape.
 
 ## What Belongs Here
 
-- Improvements to the WIO testing workflow.
+- Improvements to the testing workflow.
 - Better examples, command wording, and agent instructions.
 - New testing reference topics under `plugins/wio/skills/wio/references/`.
 - Fixes to Codex or Claude Code plugin packaging.
-- Hook or subagent changes that reinforce the existing WIO workflow.
+- Hook or subagent changes that reinforce the existing workflow.
 
 ## What Does Not Belong Here
 
