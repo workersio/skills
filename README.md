@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="public/readme-demo.gif" alt="@workersio/skills running inside a coding agent terminal" width="100%">
+</div>
+
 <h1>@workersio/skills</h1>
 
 <p>
@@ -9,11 +13,6 @@
   <a href="https://github.com/workersio/skills/releases"><img alt="Release" src="https://img.shields.io/github/v/release/workersio/skills?style=flat&color=111827"></a>
   <a href="https://github.com/workersio/skills/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/workersio/skills?style=flat&color=111827"></a>
 </p>
-
-<div align="center">
-  <img src="public/header.jpg" alt="Workers IO skill for coding agents to test code for reliability and correctness" width="100%">
-  <img src="public/wio-demo.gif" alt="@workersio/skills running inside a coding agent terminal" width="880">
-</div>
 
 Most AI-written tests optimize for coverage. They assert implementation details,
 mock away the real risk, and pass even when the product breaks.
