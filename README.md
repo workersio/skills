@@ -2,16 +2,15 @@
   <img src="public/readme-demo.gif" alt="@workersio/skills running inside a coding agent terminal" width="100%">
 </div>
 
-<h1>@workersio/skills</h1>
+<h1>Skills to find unknown bugs before release!</h1>
 
 <p>
-  The only skill you will need for software reliability and correctness.
+  We help your agents test edge cases in your software where rare production bugs hide.
 </p>
 
 <p>
-  <a href="https://github.com/workersio/skills/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/workersio/skills?style=flat&color=111827"></a>
-  <a href="https://github.com/workersio/skills/releases"><img alt="Release" src="https://img.shields.io/github/v/release/workersio/skills?style=flat&color=111827"></a>
-  <a href="https://github.com/workersio/skills/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/workersio/skills?style=flat&color=111827"></a>
+  <a href="https://github.com/workersio/skills/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/workersio/skills?style=for-the-badge&color=111827"></a>
+  <a href="https://github.com/workersio/skills/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/workersio/skills?style=for-the-badge&color=111827"></a>
 </p>
 
 Most AI-written tests optimize for coverage. They assert implementation details,
