@@ -35,23 +35,23 @@ $wio doctor    # Audit suite health, weak assertions, flakes, mocks, and CI blin
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="public/openai-dark.svg">
     <img src="public/openai-light.svg" alt="Codex" width="22" align="center">
-  </picture> Codex &nbsp;&nbsp;
+  </picture>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="public/claude-dark.svg">
     <img src="public/claude-light.svg" alt="Claude Code" width="22" align="center">
-  </picture> Claude Code &nbsp;&nbsp;
+  </picture>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="public/cursor-dark.svg">
     <img src="public/cursor-light.svg" alt="Cursor" width="22" align="center">
-  </picture> Cursor &nbsp;&nbsp;
+  </picture>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="public/copilot-dark.svg">
     <img src="public/copilot-light.svg" alt="GitHub Copilot" width="22" align="center">
-  </picture> GitHub Copilot &nbsp;&nbsp;
+  </picture>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="public/gemini-dark.svg">
     <img src="public/gemini-light.svg" alt="Gemini" width="22" align="center">
-  </picture> Gemini
+  </picture>
 </p>
 
 `@workersio/skills` is packaged for Codex and Claude Code today. The core skill
