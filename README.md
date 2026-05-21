@@ -1,12 +1,54 @@
 <div align="center">
-  <img src="header.jpg" alt="Agent workflows for high-quality software testing, test strategy, and test-suite reliability" width="100%">
+  <img src="public/header.jpg" alt="WIO testing workflow skill for coding agents" width="100%">
 </div>
 
-## Write better tests, not more tests
+<h1 align="center">WIO</h1>
 
-Most AI-written tests optimize for coverage. They assert implementation details, mock away the real risk, and pass even when the product breaks.
+<p align="center">
+  Write better tests, not more tests.
+</p>
 
-WIO is one testing workflow skill with five commands: `$wio scan`, `$wio test`, `$wio workload`, `$wio review`, and `$wio doctor`.
+<p align="center">
+  <a href="https://github.com/workersio/skills/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/workersio/skills?style=flat&color=111827"></a>
+  <a href="https://github.com/workersio/skills/releases"><img alt="Release" src="https://img.shields.io/github/v/release/workersio/skills?style=flat&color=111827"></a>
+  <a href="https://github.com/workersio/skills/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/workersio/skills?style=flat&color=111827"></a>
+  <img alt="Codex" src="https://img.shields.io/badge/Codex-plugin-111827?style=flat">
+  <img alt="Claude Code" src="https://img.shields.io/badge/Claude_Code-plugin-111827?style=flat">
+  <img alt="Testing" src="https://img.shields.io/badge/focus-test_quality-111827?style=flat">
+</p>
+
+<p align="center">
+  <img src="public/wio-demo.gif" alt="WIO running inside a coding agent terminal" width="880">
+</p>
+
+Most AI-written tests optimize for coverage. They assert implementation details,
+mock away the real risk, and pass even when the product breaks. WIO gives coding
+agents a testing workflow that asks a stricter question: will this test catch a
+real regression that users, operators, reviewers, or maintainers care about?
+
+WIO is one skill with five command modes:
+
+```text
+$wio scan      # Find high-value tests to add next.
+$wio test      # Run candidate discovery, strategy, implementation, and review.
+$wio workload  # Generate realistic, replayable workloads with new bug-finding value.
+$wio review    # Judge whether a test should be kept, redone, or removed.
+$wio doctor    # Audit suite health, weak assertions, flakes, mocks, and CI blind spots.
+```
+
+## Works With
+
+<p>
+  <img src="public/openai.svg" alt="Codex" width="22" align="center"> Codex &nbsp;&nbsp;
+  <img src="public/claude.svg" alt="Claude Code" width="22" align="center"> Claude Code &nbsp;&nbsp;
+  <img src="public/cursor.svg" alt="Cursor" width="22" align="center"> Cursor-compatible skill installs &nbsp;&nbsp;
+  <img src="public/copilot.svg" alt="GitHub Copilot" width="22" align="center"> GitHub Copilot workflows &nbsp;&nbsp;
+  <img src="public/gemini.svg" alt="Gemini" width="22" align="center"> Other coding agents
+</p>
+
+WIO is packaged for Codex and Claude Code today. The core skill content is plain
+Markdown, so the testing workflow can also be adapted by other coding agents
+that support project skills, instructions, or reusable prompts.
 
 ## Install
 
@@ -16,71 +58,63 @@ Direct skill install:
 npx skills add workersio/skills
 ```
 
-Claude Code marketplace install:
+Codex plugin marketplace:
+
+```bash
+codex plugin marketplace add workersio/skills
+```
+
+Claude Code plugin marketplace:
 
 ```bash
 claude plugin marketplace add workersio/skills
 claude plugin install wio@workersio-skills
 ```
 
-Claude plugin installs include the WIO skill, plugin hooks, and Markdown
-subagents from `plugins/wio/agents/`.
-
-Codex marketplace add:
-
-```bash
-codex plugin marketplace add workersio/skills
-```
-
-For local Codex plugin testing, add this checkout as the marketplace root:
+For local Codex plugin testing from this checkout:
 
 ```bash
 codex plugin marketplace add .
 ```
 
-Codex plugin installs include the WIO skill and plugin hook config. Codex
-custom agents are a separate native surface: they are loaded from
-`.codex/agents/` in a project or `~/.codex/agents/` for the user.
+## What WIO Provides
 
-To enable WIO Codex agents globally:
-
-```bash
-mkdir -p ~/.codex/agents
-cp .codex/agents/wio-*.toml ~/.codex/agents/
-```
-
-To enable WIO Codex agents for the current project:
-
-```bash
-mkdir -p .codex/agents
-cp /path/to/wio-skills/.codex/agents/wio-*.toml .codex/agents/
-```
-
-To enable the WIO Codex hook config for the current project:
-
-```bash
-cp /path/to/wio-skills/.codex/hooks.json .codex/hooks.json
-```
-
-Verify Codex agent files:
-
-```bash
-find .codex/agents ~/.codex/agents -name 'wio-*.toml' 2>/dev/null
-```
-
-## Commands
-
-| Command | What it does |
+| Area | What the agent gets |
 | --- | --- |
-| `$wio scan [target]` | Maps product behavior, existing tests, CI, and risk areas to find the highest-value tests to add next. |
-| `$wio test [target]` | Runs the full loop: discover a bug-prone candidate, pick strategy, write test, validate, review, then keep only if valuable. |
-| `$wio workload [target]` | Generates realistic, adversarial, replayable user-session/API/CLI/job/load workloads that add new bug-finding value beyond existing workloads. |
-| `$wio review [target]` | Reviews a test for customer value, developer-flow value, signal quality, maintainability, and false confidence. |
-| `$wio doctor [target]` | Audits test-suite health: weak assertions, flakes, excessive mocks, broad snapshots, slow feedback, skipped tests, and missing critical behavior coverage. |
+| Test discovery | Maps product behavior, recent changes, existing tests, CI, and risk areas before choosing what to test. |
+| Strategy selection | Chooses the right level: unit, component, integration, contract, E2E, workload, fuzz, property, mutation, resilience, or monitoring. |
+| Test writing | Adds focused tests using the repository's own framework, naming, fixtures, helpers, and runner conventions. |
+| Workload generation | Creates realistic, adversarial, seeded, replayable sessions or traffic that add coverage beyond wrappers and parameter sweeps. |
+| Test review | Applies a strict value gate: `KEEP`, `REDO`, or `REMOVE`. Coverage alone is not enough. |
+| Suite health | Finds weak assertions, over-mocking, broad snapshots, flakes, skipped tests, slow feedback loops, and CI blind spots. |
+
+## Command Guide
+
+| Command | Use it when | Example |
+| --- | --- | --- |
+| `$wio scan [target]` | You do not yet know what to test. | `$wio scan checkout` |
+| `$wio test [target]` | You want the full write-and-review loop. | `$wio test billing eligibility regression` |
+| `$wio workload [target]` | The risk lives in realistic user, API, CLI, job, or load behavior. | `$wio workload onboarding session` |
+| `$wio review [target]` | A test exists and you need to decide whether it has real value. | `$wio review tests/billing_eligibility_test.py` |
+| `$wio doctor [target]` | The suite is hard to trust or maintain. | `$wio doctor API test suite` |
+
+## Quality Bar
+
+A WIO-approved test should answer:
+
+- What user, operator, customer, or API consumer failure does this prevent?
+- What production, release, support, debugging, or review risk does it reduce?
+- Would it fail for the regression that matters?
+- Which assertion or invariant catches the plausible bug?
+- Does the setup preserve the important dependency, state, permission, timing, or data risk?
+- Does this belong in local development, PR CI, nightly, release, or production monitoring?
+- If this is a workload, what existing workload gap does it fill?
+
+If those answers are weak, the test should be redesigned or removed.
 
 ## Subagents
 
-WIO includes three focused subagents:
+WIO includes three optional focused subagents:
 
 | Subagent | Role |
 | --- | --- |
@@ -88,86 +122,79 @@ WIO includes three focused subagents:
 | `wio-strategy-critic` | Read-only challenge of the selected strategy before editing tests. |
 | `wio-test-reviewer` | Read-only post-write review that returns `KEEP`, `REDO`, or `REMOVE`. |
 
-The main agent still writes the test. Subagents gather evidence, challenge the strategy, and review value. They do not duplicate reference content and they do not own the workflow.
+The main agent still writes the test and owns the final decision. Subagents
+inspect, challenge, and review; they do not duplicate the reference library or
+replace the main workflow.
 
-Claude plugin subagents live in `plugins/wio/agents/`, which is the official Claude plugin location. Project-local Claude subagents can also be copied to `.claude/agents/` when a repo is not using the plugin.
+## Repository Layout
 
-Codex project subagents live in `.codex/agents/*.toml`, which is the official Codex custom-agent location.
+| Path | Purpose |
+| --- | --- |
+| `plugins/wio/skills/wio/SKILL.md` | Source of truth for the WIO skill workflow. |
+| `plugins/wio/skills/wio/references/` | Detailed testing guidance loaded only when relevant. |
+| `plugins/wio/agents/` | Claude Code plugin subagents. |
+| `.codex/agents/` | Codex custom-agent TOML files for project or user installs. |
+| `plugins/wio/hooks/hooks.json` | Shared plugin hook config. |
+| `.agents/plugins/marketplace.json` | Codex marketplace entry. |
+| `.claude-plugin/marketplace.json` | Claude Code marketplace entry. |
+| `public/` | README assets, demo GIF, and agent icons. |
 
-## Hooks
+## Codex Agents And Hooks
 
-WIO hooks only remind the active agent to validate test changes and apply the WIO value gate. The executable hook logic lives in `plugins/wio/skills/wio/scripts/test-review-reminder.py`.
+Codex plugin installs include the WIO skill and plugin hook config. Codex custom
+agents are a separate native surface loaded from `.codex/agents/` in a project
+or `~/.codex/agents/` for the user.
 
-Hook config exists in the official locations:
+Enable WIO Codex agents globally:
 
-- Claude plugin hook: `plugins/wio/hooks/hooks.json`
-- Claude project hook: `.claude/settings.json`
-- Codex plugin hook: `plugins/wio/hooks/hooks.json`
-- Codex project hook: `.codex/hooks.json`
+```bash
+mkdir -p ~/.codex/agents
+cp .codex/agents/wio-*.toml ~/.codex/agents/
+```
+
+Enable WIO Codex agents for the current project:
+
+```bash
+mkdir -p .codex/agents
+cp /path/to/wio-skills/.codex/agents/wio-*.toml .codex/agents/
+```
+
+Enable the WIO Codex hook config for the current project:
+
+```bash
+mkdir -p .codex
+cp /path/to/wio-skills/.codex/hooks.json .codex/hooks.json
+```
+
+## Claude Code Agents And Hooks
+
+Claude plugin installs include the WIO skill, plugin hooks, and Markdown
+subagents from `plugins/wio/agents/`. Project-local Claude Code agents can also
+be copied into `.claude/agents/` when a repository is not using the plugin.
 
 ## References
 
-Detailed testing guidance lives only in `plugins/wio/skills/wio/references/`.
-
-Reference topics include:
-
-| Area | Covers |
-| --- | --- |
-| Behavior mapping | Turning product behavior, workflows, APIs, and incidents into test candidates. |
-| Risk-based testing | Prioritizing tests by customer impact, likelihood, confidence gap, and cost. |
-| Test level selection | Choosing unit, component, integration, contract, E2E, monitoring, or specialized checks. |
-| Workload modeling | Building realistic session, traffic, stateful, synthetic, or operator workloads with new failure surfaces, bounded variance, replay, and meaningful invariants. |
-| Oracles and assertions | Designing assertions that fail for real regressions and explain what broke. |
-| Test data and fixtures | Setup, isolation, factories, seeds, cleanup, and state management. |
-| Mocking and doubles | Preserving fidelity while keeping tests deterministic and fast. |
-| Suite health | Finding flakes, weak signal, slow feedback, skipped tests, and CI blind spots. |
-| Advanced strategies | Static analysis, security testing, fuzzing, property-based testing, mutation testing, performance testing, resilience testing, and regression selection. |
-
-## Usage
-
-```text
-$wio scan checkout
-$wio test billing eligibility regression
-$wio workload onboarding session
-$wio review tests/billing_eligibility_test.py
-$wio doctor API test suite
-```
-
-Use `scan` when you do not yet know what to test. Use `test` when you want the whole candidate-strategy-write-review loop. Use `workload` when interaction across a realistic session is the risk and the work should add coverage beyond existing workload behavior. Use `review` when a test already exists or has just been written. Use `doctor` when an existing suite is hard to trust.
-
-## What Good Means
-
-A generated or recommended test should answer:
-
-- What user, operator, customer, or API consumer failure does this prevent?
-- What production, release, support, debugging, or review risk does it reduce?
-- Would it fail for the regression that matters?
-- What plausible bug would make it fail, and which assertion or invariant catches it?
-- Is the assertion specific enough to diagnose the broken behavior?
-- Does the setup preserve the important dependency, state, permission, timing, or data risk?
-- Does this belong in local development, PR CI, nightly, release, or production monitoring?
-- If this is a workload, what existing workloads were inspected, what gap does this fill, and why is it more than a wrapper, runner, seed sweep, or parameter expansion?
-- If this is a workload, is variance bounded, seeded, replayable, adversarial in the right places, and checked by meaningful invariants?
-
-If those answers are weak, the test should be redesigned or removed.
+Detailed testing guidance lives only in
+`plugins/wio/skills/wio/references/`. Reference topics cover behavior mapping,
+risk-based testing, test levels, workload modeling, oracles, fixtures, mocks,
+suite health, static analysis, security testing, fuzzing, property-based
+testing, mutation testing, performance testing, resilience testing, and
+regression selection.
 
 ## Contributing
 
-Keep the public surface area small: one skill, `wio`, with command modes `scan`, `test`, `workload`, `review`, and `doctor`.
+Keep the public surface area small: one skill, `wio`, with command modes
+`scan`, `test`, `workload`, `review`, and `doctor`.
 
-Detailed testing guidance belongs in `plugins/wio/skills/wio/references/`, not duplicated inside workflow files, cloud folders, subagents, hooks, or extra skill trees. When adding a reference topic, add both `overview.md` and `tools.md`, then link it from `plugins/wio/skills/wio/references/index.md`.
+Detailed testing guidance belongs in
+`plugins/wio/skills/wio/references/`, not duplicated inside cloud folders,
+subagents, hooks, or extra skill trees. When adding a reference topic, add both
+`overview.md` and `tools.md`, then link it from
+`plugins/wio/skills/wio/references/index.md`.
 
-Host-specific files must stay minimal and point back to WIO:
-
-- Claude Code plugins: shared install packages live in `plugins/wio/` with `.claude-plugin/plugin.json`, root-level `skills/`, `agents/`, and `hooks/`.
-- Claude Code marketplace: `.claude-plugin/marketplace.json`.
-- Codex plugins: shared install packages live in `plugins/wio/` with `.codex-plugin/plugin.json`, root-level `skills/`, and `hooks/`.
-- Codex marketplace: `.agents/plugins/marketplace.json`.
-- Codex subagents: project custom agents live in `.codex/agents/*.toml` per the official Codex subagents docs.
-- Codex hooks: project hooks can live in `.codex/hooks.json` per the official Codex hooks docs.
-
-The quality bar is simple: do not accept tests for coverage alone. A test should reduce real user risk, production risk, support load, debugging time, review time, or release risk.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution workflow and release
+expectations.
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).

@@ -1,7 +1,7 @@
 {
   "name": "wio",
   "version": "0.1.0",
-  "description": "Testing workflow skill for high-value test discovery, strategy, implementation, original workload generation, review, and suite health diagnostics.",
+  "description": "Testing workflow skill for high-value test discovery, strategy selection, focused implementation, realistic workload generation, strict review, and suite health diagnostics.",
   "author": {
     "name": "workers.io",
     "url": "https://github.com/workersio"
@@ -20,8 +20,8 @@
   "hooks": "./hooks/hooks.json",
   "interface": {
     "displayName": "WIO",
-    "shortDescription": "Write and review high-value tests, not coverage padding.",
-    "longDescription": "WIO adds a testing workflow for discovering valuable test candidates, choosing the right strategy, writing focused tests, generating realistic workloads that add new bug-finding value beyond existing coverage, reviewing test value, and diagnosing suite health.",
+    "shortDescription": "Write better tests, not more tests.",
+    "longDescription": "WIO gives coding agents a rigorous testing workflow for discovering valuable test candidates, choosing the right strategy, writing focused tests, generating realistic replayable workloads, reviewing test value with KEEP/REDO/REMOVE decisions, and diagnosing suite health.",
     "developerName": "workers.io",
     "category": "Productivity",
     "capabilities": [
